@@ -1,0 +1,257 @@
+###############################################################################
+# 
+#  Copyright (c) 2005, 2006
+#  University of Rochester
+#  Department of Computer Science
+#  All rights reserved.
+# 
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+# 
+#     * Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+# 
+#     * Neither the name of the University of Rochester nor the names of its
+#       contributors may be used to endorse or promote products derived from
+#       this software without specific prior written permission.
+# 
+# 
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+
+########################################
+# get all platform/OS
+PLATFORM = $(shell uname -p)
+OS = $(shell uname -rs)
+
+########################################
+# x86-Linux
+CXX_i686 = /usr/bin/g++
+LDFLAGS_i686 = -L/usr/lib/gcc/i386-redhat-linux/4.1.1 -lpthread
+CXXFLAGS_i686 = -DX86 -DLINUX
+MFLAGS_i686 = -j2
+
+########################################
+# sparc-solaris
+CXX_sparc = /usr/grads/share/gcc411/bin/g++
+LDFLAGS_sparc = -L/usr/grads/share/gcc411/lib
+CXXFLAGS_sparc = -DSPARC -pthreads -mcpu=supersparc -ffixed-g5 -Wa,-xarch=v8plus
+MFLAGS_sparc = -j6
+
+#######################################
+# Darwin on core 2 duo reports as i386
+CXX_i386 = g++
+LDFLAGS_i386 = -lpthread
+CXXFLAGS_i386 = -DX86 -DDARWIN
+MFLAGS_i386 = -j2
+
+########################################
+# set initial values for the core variables
+OBJROOT = ./obj
+OBJDIR = $(OBJROOT)/$(STM_VERSION)
+CXX = $(CXX_${PLATFORM})
+LDFLAGS = $(LDFLAGS_${PLATFORM})
+CXXFLAGS = -Wall -Wno-non-template-friend $(CXXFLAGS_${PLATFORM}) -D_REENTRANT 
+MFLAGS = $(MFLAGS_${PLATFORM})
+
+########################################
+# set the STM library to build (default=rstm)
+ifeq ($(STM_VERSION), )
+    STM_VERSION = rstm
+endif
+CXXFLAGS += -D$(shell echo $(STM_VERSION)|tr '[a-z]' '[A-Z]')
+
+########################################
+# set the build profile (default=normal)
+CXXFLAGS_normal  =  -ggdb -O3
+CXXFLAGS_fast    =  -DNDEBUG -O3
+CXXFLAGS_debug   =  -ggdb -O0
+CXXFLAGS_gp0     =  -ggdb -pg -O0
+CXXFLAGS_gp      =  -ggdb -pg -O3
+ifeq ($(PROFILE), )
+    PROFILE = normal
+endif
+CXXFLAGS += $(CXXFLAGS_${PROFILE})
+
+########################################
+# set the thread local storage strategy
+ifeq ($(TLS), )
+	TLS = PTHREAD
+endif
+CXXFLAGS += -DTLS_$(TLS)
+
+########################################
+# set the allocator (default=GCHeap)
+# if version=rtm, then override the allocator preference
+ifeq ($(ALLOCATOR), )
+    ALLOCATOR = GCHEAP
+endif
+ALLOCATOR_DEFINE =-DALLOCATION_$(ALLOCATOR)
+
+# if version=mtmalloc, then add -lmtmalloc
+ifeq ($(ALLOCATOR), MTMALLOC)
+    LDFLAGS += -lmtmalloc
+endif
+
+CXXFLAGS += $(ALLOCATOR_DEFINE) 
+
+########################################
+# set the static CM (default=Polka)
+ifeq ($(DEFAULT_CM), )
+    DEFAULT_CM = Polka
+endif
+CXXFLAGS += -DDEFAULT_CM=$(DEFAULT_CM)
+
+########################################
+# validation heuristics are off by default
+ifeq ($(VALIDATION_HEURISTICS), on)
+    CXXFLAGS += -DVALIDATION_HEURISTICS
+else
+    VALIDATION_HEURISTICS = off
+endif
+
+########################################
+# timing breakdowns are off by default
+ifeq ($(TIMING_BREAKDOWNS), on)
+    CXXFLAGS += -DTIMING_BREAKDOWNS
+else
+    TIMING_BREAKDOWNS = off
+endif
+
+########################################
+# conflict counting is off by default
+ifeq ($(COUNT_CONFLICTS), on)
+    CXXFLAGS += -DCOUNT_CONFLICTS
+else
+    COUNT_CONFLICTS = off
+endif
+
+########################################
+# cgl lock is TATAS by default
+ifeq ($(CGL_LOCK), )
+    CXXFLAGS += -DTATAS
+    CGL_LOCK = TATAS
+else
+    CXXFLAGS += -D${CGL_LOCK}
+endif
+
+########################################
+# set up privatization
+ifeq ($(PRIVATIZATION), NOFENCE)
+	CXXFLAGS += -DPRIVATIZATION_NOFENCE
+else
+ifeq ($(PRIVATIZATION), VFENCE)
+	CXXFLAGS += -DPRIVATIZATION_VFENCE
+else
+ifeq ($(PRIVATIZATION), BARRIER)
+	CXXFLAGS += -DPRIVATIZATION_BARRIER
+else
+#use a TRANSACTIONAL FENCE
+	CXXFLAGS += -DPRIVATIZATION_TFENCE
+	PRIVATIZATION = TFENCE
+endif
+endif
+endif
+
+# set up a configuration string that describes this build.  It will be reported
+# by the about() method
+CFG_STRING  = -DPARAM_VERSION='"$(STM_VERSION)"'
+CFG_STRING += -DPARAM_PROFILE='"$(PROFILE)"'
+CFG_STRING += -DPARAM_TLS='"$(TLS)"'
+CFG_STRING += -DPARAM_CM='"$(DEFAULT_CM)"'
+CFG_STRING += -DPARAM_ALLOCATOR='"$(ALLOCATOR)"'
+CFG_STRING += -DPARAM_TIMING='"$(TIMING_BREAKDOWNS)"'
+CFG_STRING += -DPARAM_HEUR='"$(VALIDATION_HEURISTICS)"'
+CFG_STRING += -DPARAM_CONFLICTS='"$(COUNT_CONFLICTS)"'
+CFG_STRING += -DPARAM_LOCK='"$(CGL_LOCK)"'
+CFG_STRING += -DPARAM_PRIVATIZATION='"$(PRIVATIZATION)"'
+
+
+# Note:
+# use this if you don't want g++ to use %%g1-%%g4: -mno-app-regs
+# use this if you don't want g++ to use %%g1     : -ffixed-g1
+
+# default target maps to /all/
+.PHONY: realall help info
+realall: all
+
+# /gmake help/ will tell you how to change options
+help:
+	@echo
+	@echo "  The default STM_VERSION is $(STM_VERSION)"
+	@echo "    To use a different library, type 'gmake STM_VERSION=xxx'"
+	@echo "    The standard libraries are astm, rstm, redo_lock, and cgl"
+	@echo
+	@echo "  The default PROFILE is $(PROFILE)"
+	@echo "    To compile with a different profile, type 'gmake PROFILE=xxx'"
+	@echo "    valid profiles are: normal, fast, debug, gp, and gp0"
+	@echo "    (see the Makefile for more info on what each option means)"
+	@echo
+	@echo "  The default ALLOCATOR is $(ALLOCATOR)"
+	@echo "    To compile with another allocator, type 'gmake ALLOCATOR=xxx'"
+	@echo "    valid allocators are GCHEAP, MALLOC, and MTMALLOC (Solaris only)"
+	@echo
+	@echo "  The compiled-in DEFAULT_CM is $(DEFAULT_CM)"
+	@echo "    To compile with another cm, type 'gmake DEFAULT_CM=xxx'"
+	@echo "    valid contention managers are in the cm/ folder"
+	@echo
+	@echo "  Validation heuristics are $(VALIDATION_HEURISTICS)"
+	@echo "    To compile with heuristics, type 'gmake"\
+               "VALIDATION_HEURISTICS=on'"
+	@echo "    To compile without heuristics, type 'gmake"\
+               "VALIDATION_HEURISTICS=off'"
+	@echo
+	@echo "  Detailed timing breakdowns are $(TIMING_BREAKDOWNS)"
+	@echo "    To compile with timing, type 'gmake TIMING_BREAKDOWNS=on'"
+	@echo "    To compile without timing, type 'gmake TIMING_BREAKDOWNS=off'"
+	@echo
+	@echo "  Detailed conflict counting is $(COUNT_CONFLICTS)"
+	@echo "    To compile with conflict counting, type" \
+               "'gmake COUNT_CONFLICTS=on'"
+	@echo "    To compile without conflict counting, type" \
+               "'gmake COUNT_CONFLICTS=off'"
+	@echo
+	@echo "  The cgl library is using a $(CGL_LOCK) lock."
+	@echo "    To set the lock to TATAS or TICKET, type 'gmake CGL_LOCK=xxx'"
+	@echo
+	@echo "  Privatization is currently using $(PRIVATIZATION)"
+	@echo "    options are TFENCE, VFENCE, NOFENCE, and BARRIER"
+	@echo
+	@echo "  Thread local storage has been changed to use the TLS flag"
+	@echo "    options are PTHREAD, GCC_IMPLICIT, SPARC_UNSAFE"
+	@echo
+	@echo "  options may be combined"
+	@echo
+
+# /info/ prints the current configuration
+info:
+	@echo
+	@echo "Build_Configuration:"
+	@echo "Platform:             $(PLATFORM)"
+	@echo "OS:                   $(OS)"
+	@echo "STM_Version:          $(STM_VERSION)"
+	@echo "Profile:              $(PROFILE)"
+	@echo "Allocator:            $(ALLOCATOR)"
+	@echo "Default_CM:           $(DEFAULT_CM)"
+	@echo "Thread_Local_Storage: $(TLS)"
+	@echo "Heuristics:           $(VALIDATION_HEURISTICS)"
+	@echo "Timing:               $(TIMING_BREAKDOWNS)"
+	@echo "Conflict_Counting:    $(COUNT_CONFLICTS)"
+	@echo "CGL_LOCK:             $(CGL_LOCK)"
+	@echo "Privatization:        $(PRIVATIZATION)"
+	@echo
+	@echo "Use 'gmake help' for more information"
+	@echo
