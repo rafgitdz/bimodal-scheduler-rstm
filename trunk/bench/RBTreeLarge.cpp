@@ -34,6 +34,11 @@
 
 #include "RBTreeLarge.h"
 
+#include <limits>
+
+#define INT_MIN 0
+#define INT_MAX std::numeric_limits<int>::max()
+
 using namespace stm;
 using namespace bench;
 

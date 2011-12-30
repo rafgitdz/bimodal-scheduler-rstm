@@ -36,6 +36,7 @@
 #define __CONTENTIONMANAGER_H__
 
 #include <string>
+#include <cstdlib>
 #include <sys/time.h>
 #include "atomic_ops.h"
 #include "hrtime.h"
@@ -98,7 +99,21 @@ namespace stm
 			public:
 				time_t getTimestamp() { return m_timestamp; }
 				
-		}
+				virtual void OnBeginTransaction() 
+				{
+					struct timeval t;
+
+					gettimeofday(&t, NULL);
+					m_timestamp = t.tv_sec;
+				}
+				
+				virtual bool ShouldAbort(ContentionManager* enemy)
+				{
+					BiModalCM *b = dynamic_cast<BiModalCM*>(enemy);
+					
+					return (b->getTimestamp() < m_timestamp);
+				}
+		};
 	#endif
 
 

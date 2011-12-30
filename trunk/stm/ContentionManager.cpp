@@ -47,6 +47,11 @@
 // create the appropriate cm based on the input string
 stm::cm::ContentionManager* stm::cm::Factory(std::string cm_type)
 {
+	#ifdef USE_BIMODAL
+	if (cm_type == "Bimodal")
+		return new BiModalCM();
+	#endif
+	
     if (cm_type == "Eruption")
         return new Eruption();
     else if (cm_type == "Serializer")
