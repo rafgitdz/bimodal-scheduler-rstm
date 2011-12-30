@@ -195,7 +195,7 @@ namespace bench
             wr_ptr<PriorityHeapNode> node;
 
             // Are we updating an element already in the heap?
-            if (NULL != elt->get_heapPtr(elt.v())) {
+            if (elt->get_heapPtr(elt.v()) != NULL) {
                 node = elt->get_heapPtr(elt.v());
                 node->set_frequencyCount(node->get_frequencyCount(node.v())+1);
             }
@@ -232,7 +232,7 @@ namespace bench
             do {
                 moved = false;
 
-                if (NULL == node->get_left(node.v()))
+                if (node->get_left(node.v()) == NULL)
                     break; // reached bottom layer
 
                 left_r = node->get_left(node.v());
