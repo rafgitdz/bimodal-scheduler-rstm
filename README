@@ -1,0 +1,131 @@
+BUILDING (updates for v3)
+    Building RSTM requires GNU make.  To build the library and benchmarks using
+    default parameters, type 'make'.  This will build bench/obj/Bench_rstm.
+
+    If you would prefer to use the cgl or redo_lock library, specify it via the
+    STM_VERSION parameter to make.  For example, typing 'make STM_VERSION=cgl'
+    will create bench/obj/Bench_cgl.  The redo_lock library only compiles and
+    runs under SPARC/Solaris.
+
+    Before changing build options, you should always type 'make clean' or 'make
+    realclean'.  For information on build options, type 'make help'.
+
+    To build the Delaunay Triangulation application (mesh), type 'make mesh'.
+    Makefile parameters are the same as for benchmarks, but the mesh only
+    compiles and runs under SPARC/Solaris.
+    
+-- old README follows --
+    
+BUILDING
+
+    It is possible to build two different executables, Bench_rstm and Bench_cgl.
+    The Bench_cgl file uses a single coarse lock to provide mutual exclusion
+    around transactions, effectively turning them into critical sections and
+    preventing any parallelism.  Nonetheless, this is perhaps the simplest way
+    to write parallel code.  We assume that you are more interested in using
+    RSTM, so it is the default build.  To build Bench_cgl, type 'gmake
+    STM_VERSION=cgl'
+
+    We also assume that you would prefer to keep debugging symbols but compile
+    at -O3 optimization.  To change this, add the PROFILE parameter to your
+    build command (for example, gmake PROFILE=debug).  The valid profiles are:
+        debug   -O0, -ggdb
+        gp      -O3, -ggdb, -pg (the gnuprof flag)
+        gp0     -O0, -ggdb, -pg
+        fast    -O3, -DNDEBUG (turns off assertions)
+        normal  -O3, -ggdb
+
+    This version of RSTM allows you to use any allocator, so long as you wrap
+    reclamation in an Epoch.  We provide two allocators, one based on malloc
+    (which involves a global lock) and another that is nonblocking,
+    with per-thread heaps and lazy reclamation.  We assume that you want our
+    allocator, gcheap, but you can compile in malloc with the ALLOCATOR
+    parameter (gmake ALLOCATOR=malloc)
+
+    Additionally, we have identified contention management to be a significant
+    source of overhead.  This overhead comes from the cost of un-inlined virtual
+    functions.  To avoid this cost, RSTM now supports either dynamic contention
+    managers or static managers.  The static manager can be specified at compile
+    time, and then it will always be used unless a command-line override is
+    given (with the -C parameter).  The default static contention manager is
+    Polka.  To compile with another cm, use the DEFAULT_CM parameter to gmake.
+    Valid contention managers are in the cm/ folder.
+
+    We also recently published a paper about validation heuristics to speed
+    transactions.  Our global commit counter can be turned on at compile time
+    using the flag VALIDATION_HEURISTICS=on.
+
+    To estimate how much time is spent in bookkeeping, validation, memory
+    management, cloning, and doing real work, we have provided a timing module
+    for RSTM that you can turn on by compiling with the TIMING_BREAKDOWNS=on
+    flag.
+
+    Lastly, to view why transactions abort (such as due to validation) or why
+    transactions abort other transactions (such as due to a R-W conflict), you
+    can turn on detailed conflict counting with the COUNT_CONFLICTS=on flag.
+
+    Any of these options may be safely combined.
+
+RUNNING
+
+    The default build of RSTM includes 8 benchmarks.  RBTree is the default, and
+    but other benchmarks can be selected using the -B parameter.
+      Counter             Shared counter
+      LinkedList          Sorted linked list
+      LinkedListRelease   LinkedList + early release
+      HashTable           256-bucket hash table
+      RBTree              Red-black tree
+      RBTreeLarge         Red-black tree with 4K nodes
+      LFUCache            Web cache simulation
+      RandomGraph         Graph with 4 initial connections per node
+
+      example:  Bench_rstm -B RandomGraph
+
+    We've also rolled a few fine-grained locking benchmarks into the executable.
+    They, too, can be chosen with the -B parameter:
+      FineGrainList       Lock-based sorted linked list
+      CoarseGrainHash     256-bucket hash table w/ per-node locks
+      FineGrainHash       256-bucket hash table w/ per-bucket locks
+
+    RSTM will, by default, use its statically-specified contention manager.  To
+    override this, use the -C parameter followed by a contention manager:
+      Polka         - best choice for SMPs
+      Eruption
+      Karma
+      Highlander    - Take enemy karma whenever enemy is aborted
+      Killblocked
+      Polite        - exponential backoff
+      Polkaruption  - Polka + Eruption
+      Timestamp
+      Aggressive    - best choice for uniprocessors
+      Whpolka       - Polka with different weights for read and written objects
+      Greedy
+      Polkavis      - Polka optimized for visible readers
+
+      example:  Bench_rstm -C Whpolka
+
+    RSTM supports four different combinations of validation strategies.  A
+    transaction can read objects visibly (modifying the object's metadata) or
+    invisibly, and can acquire objects eagerly (at open time) or lazily (at
+    commit time).  Validation is specified with the -V parameter:
+      invis-eager (default)
+      invis-lazy
+      vis-eager
+      vis-lazy
+
+    In the integer set benchmarks, three read/write ratios are supported through
+    the following parameters:
+      -1: 80/10/10 lookup/insert/remove breakdown
+      -2: 33/33/33 lookup/insert/remove breakdown (default)
+      -3: 0/50/50  lookup/insert/remove breakdown
+
+    There are a number of additional flags and parameters to the Bench_rstm
+    executable:
+      -d: number of seconds to time (default 5)
+      -m: number of distinct elements in the dataset (default 256)
+      -p: number of threads (default 2)
+      -h: print help
+      -q: quiet mode
+      -v: verbose mode
+      -!: skip verification at end of benchmark
+      -T:[lh] perform light or heavy unit testing (heavy testing never ends)
