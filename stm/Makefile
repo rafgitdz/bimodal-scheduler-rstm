@@ -42,7 +42,7 @@ COMMON_OBJS = $(OBJDIR)/instrumentation.o $(OBJDIR)/Epoch.o \
 COMMON_HEADERS = instrumentation.h stm_common.h Epoch.h IdManager.h
 
 CM_OBJS = $(OBJDIR)/ContentionManager.o
-CM_HEADERS = ContentionManager.h atomic_ops.h hrtime.h \
+CM_HEADERS = ContentionManager.h BiModalCM.h atomic_ops.h hrtime.h \
              Descriptor_$(STM_VERSION).h
 
 MM_OBJS = $(OBJDIR)/stm_mm.o
@@ -67,6 +67,7 @@ RSTM_HEADERS = Descriptor_rstm.h rstm.h CustomAllocedBase.h \
                ContentionManager.h stm_common.h \
                Reclaimer.h macros.h accessors.h \
                stm_mm.h GCHeap.h MallocHeap.h
+               
 
 RL_OBJS = $(OBJDIR)/redo_lock.o $(MM_OBJS) $(CM_OBJS) $(COMMON_OBJS)
 
@@ -114,6 +115,9 @@ $(OBJDIR)/Epoch.o: Epoch.cpp $(COMMON_HEADERS)
 	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -c $< -o $@
 
 $(OBJDIR)/IdManager.o: IdManager.cpp $(COMMON_HEADERS)
+	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -c $< -o $@
+
+$(OBJDIR)/BiModalCM.o: BiModalCM.cpp $(CM_HEADERS)
 	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -c $< -o $@
 
 $(OBJDIR)/ContentionManager.o: ContentionManager.cpp $(CM_HEADERS)

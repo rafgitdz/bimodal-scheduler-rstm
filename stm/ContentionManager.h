@@ -87,36 +87,7 @@ namespace stm
         ///////////////////////////////////////////////////////
         //
         // CM Implementations
-
-	#ifdef USE_BIMODAL
-		// The BiModal contention manager
-		class BiModalCM : public ContentionManager
-		{
-			private:
-				time_t m_timestamp;
-				bool m_isRO;
-				
-			public:
-				time_t getTimestamp() { return m_timestamp; }
-				
-				virtual void OnBeginTransaction() 
-				{
-					struct timeval t;
-
-					gettimeofday(&t, NULL);
-					m_timestamp = t.tv_sec;
-				}
-				
-				virtual bool ShouldAbort(ContentionManager* enemy)
-				{
-					BiModalCM *b = dynamic_cast<BiModalCM*>(enemy);
-					
-					return (b->getTimestamp() < m_timestamp);
-				}
-		};
-	#endif
-
-
+		//
         // aggressive is very simple; it always aborts the enemy transaction
         class Aggressive: public ContentionManager
         {
@@ -157,7 +128,7 @@ namespace stm
 
                     // how long should we wait (random)
                     unsigned long delay = rand_r(&seed);
-                    delay = delay % (1 << tries + MIN_BACKOFF);
+                    delay = delay % (1 << (tries + MIN_BACKOFF));
 
                     // spin until /delay/ nanoseconds have passed.  We can do
                     // whatever we want in the spin, as long as it doesn't have
