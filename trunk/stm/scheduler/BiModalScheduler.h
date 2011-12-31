@@ -14,8 +14,8 @@ namespace stm {
 		private:
 			static ThreadLock* m_threadLock;
 			static BiModalScheduler* m_Instance;
-			Scheduler();
-			~Scheduler();
+			BiModalScheduler();
+			~BiModalScheduler();
 		public:
 			static void init();
 			static BiModalScheduler* instance();
@@ -34,9 +34,6 @@ namespace stm {
 
 			// Initializes the threads that are responsible to do activate the transaction-function
 			void initExecutingThreads(std::string cm_type, std::string validation, bool use_static_cm);
-
-			// Sets the scheduling policy to use from now on
-			void setSchedulingPolicy(SchedulingPolicy newPolicy);
 
 		public:
 			/*
