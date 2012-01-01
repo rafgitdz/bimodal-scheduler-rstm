@@ -46,6 +46,11 @@
 #include "macros.h"
 #include "accessors.h"
 
+
+#ifndef USE_BIMODAL
+#define USE_BIMODAL
+#endif
+
 namespace stm
 {
     /**
@@ -75,6 +80,13 @@ namespace stm
         internal::desc_array[id] =
             new internal::Descriptor(id, cm_type, validation, use_static_cm);
     }
+    
+    #ifdef USE_BIMODAL
+    inline static void init(std::string cm_type, std::string validation,
+						bool use_static_cm, int coreNum) {
+	}
+    
+    #endif
 
     /**
      *  Call at thread destruction time to clean up and release any global TM

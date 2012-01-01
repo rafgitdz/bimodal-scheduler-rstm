@@ -63,6 +63,10 @@ namespace stm
             virtual void OnTransactionCommitted() { priority = 0; }
             virtual void OnTransactionAborted() { }
 
+#ifdef USE_BIMODAL
+			virtual void onConflictWith(int iCore) {}
+#endif
+
             // Object-level events
             virtual void onContention() { }
             virtual void OnOpenRead() { }

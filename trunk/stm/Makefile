@@ -42,7 +42,7 @@ COMMON_OBJS = $(OBJDIR)/instrumentation.o $(OBJDIR)/Epoch.o \
 COMMON_HEADERS = instrumentation.h stm_common.h Epoch.h IdManager.h
 
 CM_OBJS = $(OBJDIR)/ContentionManager.o
-CM_HEADERS = ContentionManager.h BiModalCM.h atomic_ops.h hrtime.h \
+CM_HEADERS = ContentionManager.h BiModalCM.hpp atomic_ops.h hrtime.h \
              Descriptor_$(STM_VERSION).h
 
 MM_OBJS = $(OBJDIR)/stm_mm.o
@@ -115,9 +115,6 @@ $(OBJDIR)/Epoch.o: Epoch.cpp $(COMMON_HEADERS)
 	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -c $< -o $@
 
 $(OBJDIR)/IdManager.o: IdManager.cpp $(COMMON_HEADERS)
-	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -c $< -o $@
-
-$(OBJDIR)/BiModalCM.o: BiModalCM.cpp $(CM_HEADERS)
 	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -c $< -o $@
 
 $(OBJDIR)/ContentionManager.o: ContentionManager.cpp $(CM_HEADERS)
