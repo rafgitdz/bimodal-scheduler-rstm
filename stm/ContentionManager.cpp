@@ -44,7 +44,9 @@
 #include "Descriptor_redo_lock.h"
 #endif
 
-#include "BiModalCM.h"
+#ifdef USE_BIMODAL
+#include "BiModalCM.hpp"
+#endif
 
 // create the appropriate cm based on the input string
 stm::cm::ContentionManager* stm::cm::Factory(std::string cm_type)

@@ -4,8 +4,9 @@
 #include <unistd.h>
 #include <iostream>
 
+#include "RescheduleException.h"
 
-#include "stm.hpp" /* for stm::init - initializing stm threads */
+#include "rstm.h" /* for stm::init - initializing stm threads */
 
 using namespace std;
 using namespace stm::scheduler;
@@ -43,7 +44,7 @@ void RunnerThread::run()
 
 void thread_cleanup(void *pArgs)
 {
-	stm::shutdown(-1);
+	stm::shutdown();
 }
 
 // The thread function
@@ -68,18 +69,11 @@ void RunnerThread::threadStart()
 	setAffinity(m_iCoreID);
 
 	// Introduce the thread to the stm
-	stm::init(m_strCmType, m_strValidation, m_blnUseStaticCm, m_iCoreID);
+	stm::init("BiModal", "vis-eager", false, m_iCoreID);
 
 	doJobs();
 }
 
-#if defined(__sun) /* Solaris */
-void RunnerThread::setAffinity(int iCpuID)
-{
-	processor_bind(P_LWPID, P_MYID, iCpuID, NULL);
-	cout << "Affinity was set for cpu " << iCpuID << endl;
-}
-#else /* Linux */
 void RunnerThread::setAffinity(int iCpuID)
 {
 	cpu_set_t cpuMask;
@@ -91,7 +85,6 @@ void RunnerThread::setAffinity(int iCpuID)
 	sched_setaffinity(0, lLen, &cpuMask); // Set the affinity of the current process
 	cout << "Affinity was set for cpu " << iCpuID << endl;
 }
-#endif
 
 void RunnerThread::doJobs()
 {
@@ -161,16 +154,5 @@ void RunnerThread::moveJob(RunnerThread *otherThread)
 void RunnerThread::shutdown()
 {
 	pthread_cancel(m_thread);
-#ifdef	USE_CARSTM_V2
-	cout << "Statistics for single TQ thread:" << endl;
-	m_queue->printStats();
-#endif
 }
-
-#ifdef	USE_CARSTM_V2
-int RunnerThread::getJobsNum()
-{
-	return m_queue->size();
-}
-#endif
 

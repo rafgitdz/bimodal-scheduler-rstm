@@ -33,7 +33,7 @@ namespace stm {
 			long getCoresNum();
 
 			// Initializes the threads that are responsible to do activate the transaction-function
-			void initExecutingThreads(std::string cm_type, std::string validation, bool use_static_cm);
+			void initExecutingThreads();
 
 		public:
 			/*
