@@ -45,6 +45,13 @@ CXXFLAGS_i686 = -DX86 -DLINUX
 MFLAGS_i686 = -j2
 
 ########################################
+# x86_64-Linux
+CXX_x86_64 = /usr/bin/g++
+LDFLAGS_x86_64 = -L/usr/lib/gcc/i386-redhat-linux/4.1.1 -lpthread
+CXXFLAGS_x86_64 = -DX86 -DLINUX
+MFLAGS_x86_64 = -j2
+
+########################################
 # sparc-solaris
 CXX_sparc = /usr/grads/share/gcc411/bin/g++
 LDFLAGS_sparc = -L/usr/grads/share/gcc411/lib
