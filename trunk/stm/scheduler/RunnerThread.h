@@ -70,9 +70,14 @@ namespace stm
 
 			// Moves the job that currently runs to the given core
 			void moveJob(RunnerThread *otherThread);
-
+			
+			// Moves the job that currently runs to the scheduler ro Queue
+			void moveJobToROQueue();
+			
 			// Shutdown transactions running on this thread
 			void shutdown();
+			
+			long getCurrentEpoch() { return m_currJob->getEpochNum(); }
 
 		};
 	}
