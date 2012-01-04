@@ -63,6 +63,27 @@ void Queue::push(InnerJob *const value)
 	}
 }
 
+void Queue::pushFront(InnerJob *const value) {
+	Node* temp = new Node;
+	if (temp != 0)
+	{
+		temp->data = value;
+		if (!empty())
+			temp->next = first;
+        else
+			temp->next = 0;
+			
+		first = temp;
+		if (empty())
+			last = temp;
+		mySize++;
+    }
+	else
+	{
+		//cerr << "*** Out of memory -- cannot push ***\n";
+	}
+}
+
 void Queue::pop()
 {
 	if (!empty())

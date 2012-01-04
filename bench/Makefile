@@ -35,8 +35,8 @@
 # pull in all global Make variable definitions
 include ../Makefile.in
 
-INCLUDEPATH = -I. -I../ -I../stm
-STM_LIB = ../stm/$(OBJDIR)/libstm.a
+INCLUDEPATH = -I. -I../ -I../stm -I../stm/scheduler
+STM_LIB = ../stm/$(OBJDIR)/libstm.a ../stm/$(OBJDIR)/libscheduler.a
 OBJFILES = $(OBJDIR)/BenchMain.o          $(OBJDIR)/Benchmark.o \
            $(OBJDIR)/FGL.o                $(OBJDIR)/LFUCache.o \
            $(OBJDIR)/LinkedList.o         $(OBJDIR)/LinkedListRelease.o \

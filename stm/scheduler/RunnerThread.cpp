@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "RescheduleException.h"
-
+#include "BiModalScheduler.h"
 #include "rstm.h" /* for stm::init - initializing stm threads */
 
 using namespace std;
@@ -95,8 +95,11 @@ void RunnerThread::doJobs()
 		while (m_queue->empty())
 		{
 			pthread_cond_wait(&m_condQueueNotEmpty, &m_queueLock);
-		}
+		}		
 		m_currJob = m_queue->front();
+		if (m_currJob->getEpochNum() == -1)
+			m_currJob->setEpochNum(BiModalScheduler::instance()->getCurrentEpoch());
+			
 		m_currJobInfo = m_currJob->getJobInfo();
 //		cout << "processing a job" << jobToExecute->getJobID() << endl;
 		m_queue->pop(); // Remove the job from the queue
@@ -140,7 +143,8 @@ void RunnerThread::moveJob(InnerJob *jobMoved)
 {
 	// Just add the job to the current queue (there is already a thread that waits for it's end)
 	pthread_mutex_lock(&m_queueLock);
-	m_queue->push(jobMoved);
+	jobMoved->setEpochNum(-1);
+	m_queue->pushFront(jobMoved);
 	pthread_cond_signal(&m_condQueueNotEmpty);
 	pthread_mutex_unlock(&m_queueLock);
 }
@@ -154,5 +158,9 @@ void RunnerThread::moveJob(RunnerThread *otherThread)
 void RunnerThread::shutdown()
 {
 	pthread_cancel(m_thread);
+}
+
+void RunnerThread::moveJobToROQueue() {
+	BiModalScheduler::instance()->moveJobToROQueue(m_currJob);
 }
 

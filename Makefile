@@ -47,6 +47,7 @@ all: info benchmarks
 
 $(STM_VERSION)_lib:
 	@cd stm && $(MAKE) $(MFLAGS)
+	@cd stm/scheduler && $(MAKE) $(MFLAGS)
 
 benchmarks: $(STM_VERSION)_lib
 	@cd bench && $(MAKE) $(MFLAGS)
@@ -56,11 +57,13 @@ mesh: info $(STM_VERSION)_lib
 
 clean:
 	@cd stm && $(MAKE) clean
+	@cd stm/scheduler && $(MAKE) clean
 	@cd bench && $(MAKE) clean
 	@cd mesh && $(MAKE) clean
 	rm -f TAGS*
 
 realclean:
 	@cd stm && $(MAKE) realclean
+	@cd stm/scheduler && $(MAKE) realclean
 	@cd bench && $(MAKE) realclean
 	@cd mesh && $(MAKE) realclean

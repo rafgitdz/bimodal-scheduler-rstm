@@ -9,6 +9,12 @@ using namespace stm::scheduler;
 // static members declarations
 long stm::scheduler::BiModalScheduler::m_lngCoresNum;
 stm::scheduler::BiModalScheduler* stm::scheduler::BiModalScheduler::m_Instance;
+long stm::scheduler::BiModalScheduler::m_epochNum;
+Queue* BiModalScheduler::m_roQueue;
+pthread_mutex_t BiModalScheduler::m_queueLock;
+long BiModalScheduler::m_pushJobCntr;
+long BiModalScheduler::m_popJobCntr;
+
 
 ThreadLock* stm::scheduler::BiModalScheduler::m_threadLock = new ThreadLock();
 
@@ -16,6 +22,13 @@ stm::scheduler::BiModalScheduler::BiModalScheduler()
 {
 	m_lngCoresNum = getCoresNum();
 	initExecutingThreads();
+	m_roQueue = new Queue();
+	m_epochNum = 0;
+	m_popJobCntr = 0;
+	m_pushJobCntr = 0;
+	
+	// Initialize the lock and condition var
+	pthread_mutex_init(&m_queueLock, NULL);
 }
 
 stm::scheduler::BiModalScheduler::~BiModalScheduler()
@@ -24,6 +37,8 @@ stm::scheduler::BiModalScheduler::~BiModalScheduler()
 	{
 		delete m_threadLock;
 		delete m_Instance;
+		pthread_mutex_destroy(&m_queueLock);
+		delete m_roQueue;
 	}
 }
 
@@ -110,4 +125,42 @@ void BiModalScheduler::reschedule(int iFromCore, int iToCore)
 	//cout << "Rescheduling from: " << iFromCore << " to: " << iToCore << endl;
 	m_arThreads[iFromCore]->moveJob(m_arThreads[iToCore]);
 	throw RescheduleException();
+}
+
+long BiModalScheduler::getCurrentEpoch() {
+	return m_epochNum;
+}
+
+long BiModalScheduler::getCurrentEpoch(int iCoreNum) {
+	return m_arThreads[iCoreNum]->getCurrentEpoch();
+}
+
+void BiModalScheduler::moveJobToROQueue(InnerJob *job) {
+	
+	pthread_mutex_lock(&m_queueLock);
+	m_roQueue->push(job);
+	m_pushJobCntr++;
+	if (m_pushJobCntr == getCoresNum()) {
+		m_epochNum++;
+		m_popJobCntr = 0;
+		m_pushJobCntr = 0;
+	}
+	pthread_mutex_unlock(&m_queueLock);
+	
+	throw RescheduleException();
+}
+
+InnerJob* BiModalScheduler::getJobFromROQueue() {
+	pthread_mutex_lock(&m_queueLock);
+	InnerJob *job = m_roQueue->front();
+	job->setEpochNum(m_epochNum);
+	m_roQueue->pop();
+	m_popJobCntr++;
+	if (m_popJobCntr == getCoresNum()) {
+		m_epochNum++;
+	}
+	
+	pthread_mutex_unlock(&m_queueLock);
+	
+	return job;
 }

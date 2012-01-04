@@ -35,14 +35,14 @@
 # pull in all global Make variable definitions
 include ../Makefile.in
 
-INCLUDEPATH = -I./ -I../
+INCLUDEPATH = -I./ -I../ -I./scheduler
 
 COMMON_OBJS = $(OBJDIR)/instrumentation.o $(OBJDIR)/Epoch.o \
               $(OBJDIR)/IdManager.o $(OBJDIR)/about.o
 COMMON_HEADERS = instrumentation.h stm_common.h Epoch.h IdManager.h
 
 CM_OBJS = $(OBJDIR)/ContentionManager.o
-CM_HEADERS = ContentionManager.h BiModalCM.hpp atomic_ops.h hrtime.h \
+CM_HEADERS = ContentionManager.h BiModalCM.hpp scheduler/BiModalScheduler.h atomic_ops.h hrtime.h \
              Descriptor_$(STM_VERSION).h
 
 MM_OBJS = $(OBJDIR)/stm_mm.o
