@@ -46,6 +46,14 @@
 #include "stm_api.h"
 #include "Benchmark.h"
 
+#ifndef USE_BIMODAL
+#define USE_BIMODAL
+#endif
+
+#ifdef USE_BIMODAL
+#include "scheduler/BiModalScheduler.h"
+#endif
+
 using std::cout;
 using std::endl;
 

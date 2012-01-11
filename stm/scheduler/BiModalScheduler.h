@@ -1,5 +1,9 @@
 /*
  * The BiModal Scheduler
+ * this class is a singleton , his purpose is to reschedule aborted 
+ * transactions, whether in the RO Queue, or in the queue of the core 
+ * where the winning transaction is excecuted. It also stores the current
+ * epoch number and is responsible for the epoch changing
  * 
  */ 
 
