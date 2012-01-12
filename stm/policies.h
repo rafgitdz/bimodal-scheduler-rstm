@@ -40,6 +40,11 @@
 #include "MiniVector.h"
 #include "Epoch.h"
 
+
+#ifndef USE_BIMODAL
+#define USE_BIMODAL
+#endif
+
 namespace stm
 {
     namespace internal
@@ -319,6 +324,14 @@ namespace stm
                 if (static_flag) return staticCM.ShouldAbortAll(bitmap);
                 else             return dynamicCM->ShouldAbortAll(bitmap);
             }
+            
+           #ifdef USE_BIMODAL
+            /// Wrapper for onConflictWith
+            void onConflictWith(int iCore) {
+				if (static_flag) staticCM.onConflictWith(iCore);
+				else 			 dynamicCM->onConflictWith(iCore);
+			}
+            #endif
         };
 
         /**
@@ -375,6 +388,13 @@ namespace stm
             {
                 return staticCM.ShouldAbortAll(bitmap);
             }
+            
+            #ifdef USE_BIMODAL
+            /// Wrapper for onConflictWith
+            void onConflictWith(int iCore) {
+				staticCM.onConflictWith(iCore);
+			}
+            #endif
         };
 
         /**
