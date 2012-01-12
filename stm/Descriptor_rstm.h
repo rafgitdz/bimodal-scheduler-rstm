@@ -54,6 +54,13 @@
 #include "ObjectBase_rstm.h"
 #include "SharedBase_rstm.h"
 
+#ifndef USE_BIMODAL
+#define USE_BIMODAL
+#endif
+#ifdef USE_BIMODAL
+#include <sched.h>
+#endif
+
 namespace stm
 {
     namespace internal
@@ -146,6 +153,18 @@ namespace stm
             const unsigned long id;     // definitely read by other
                                         // transactions
 
+#ifdef USE_BIMODAL
+			/**
+			 * the core where this transaction have to be rescheduled,
+			 * when the transaction rollbacks
+			 */
+			unsigned long reschedule_core_num;
+			
+			/**
+			 *  the core where this transaction is executed
+			 */
+			unsigned long iCore;
+#endif
             /**
              *  sw vis reader bitmask
              */
@@ -564,7 +583,11 @@ namespace stm
 
             // Contention Manager notification
             cm.onTxAborted();
-
+#ifdef USE_BIMODAL
+			iCore = reschedule_core_num;
+			reschedule_core_num = -1;
+			cm.onConflictWith(iCore);
+#endif
             if (shouldAbort) {
                 throw Aborted();
             }
@@ -681,6 +704,12 @@ namespace stm
             eagerWrites(mm.getHeap(), 64),
             lazyWrites(mm.getHeap(), 64)
         {
+			
+#ifdef USE_BIMODAL
+			iCore = sched_getcpu();
+			reschedule_core_num = -1;
+			
+#endif
             // the state is COMMITTED, in tx #0
             tx_state = stm::COMMITTED;
 
@@ -1118,6 +1147,9 @@ namespace stm
                         if (!cm.shouldAbort(owner->cm.getCM())
                             || !bool_cas(&(owner->tx_state), ACTIVE, ABORTED))
                         {
+#ifdef USE_BIMODAL
+							owner->reschedule_core_num = iCore;
+#endif				
                             timing.UPDATE_TIMING(TIMING_CM);
                             cm.onContention();
                             verifySelf();
@@ -1128,6 +1160,10 @@ namespace stm
                         // now ensure that we fallthrough to the cleanOnAbort
                         // code
                         ownerState = ABORTED;
+                        
+#ifdef USE_BIMODAL
+						reschedule_core_num = owner->iCore;
+#endif
                     }
 
                     // if current owner is aborted use cleanOnAbort
@@ -1285,6 +1321,9 @@ namespace stm
                         if (!cm.shouldAbort(owner->cm.getCM())
                             || !bool_cas(&(owner->tx_state), ACTIVE, ABORTED))
                         {
+#ifdef USE_BIMODAL
+							owner->reschedule_core_num = iCore;
+#endif	
                             timing.UPDATE_TIMING(TIMING_CM);
                             cm.onContention();
                             verifySelf();
@@ -1295,6 +1334,9 @@ namespace stm
                         // now ensure that we fallthrough to the cleanOnAbort
                         // code
                         ownerState = ABORTED;
+#ifdef USE_BIMODAL
+						reschedule_core_num = owner->iCore;
+#endif
                     }
 
                     // if current owner is aborted use cleanOnAbort if we are

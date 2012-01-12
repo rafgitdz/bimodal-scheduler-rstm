@@ -5,6 +5,7 @@
 
 #include "ContentionManager.h"
 #include "BiModalScheduler.h"
+#include "scheduler_common.h"
 
 
 namespace stm {
@@ -20,11 +21,14 @@ namespace stm {
 				// the id of the core where the transaction is excecuted
 				int m_iCore;
 				// the number of the epoch when the transaction started
-				long m_epochNum;
+				long m_epoch;
+				
+				// true if we have to reschedule in another queue, false otherwise
+				bool m_reschedule;
 				
 			public:
 				
-				BiModalCM() : m_isRO(true) {
+				BiModalCM() : m_isRO(true), m_reschedule(false) {
 					struct timeval t;
 
 					gettimeofday(&t, NULL);
@@ -43,7 +47,7 @@ namespace stm {
 				virtual void OnBeginTransaction() 
 				{
 					m_iCore = sched_getcpu();
-					m_epochNum = stm::scheduler::BiModalScheduler::instance()->getCurrentEpoch(m_iCore);
+					m_epoch = stm::scheduler::BiModalScheduler::instance()->getCurrentEpoch(m_iCore);
 				}
 				
 				bool ShouldAbort(ContentionManager *enemy) 
@@ -54,9 +58,22 @@ namespace stm {
 					 * If two transactions with different epoch ids have a conflict
 					 * the transaction with the bigger epoch number is aborted
 					 */
-					if (m_epochNum != b->m_epochNum)
-						return m_epochNum < b->m_epochNum;
+					if (m_epoch != b->m_epoch) {
+						/*
+						 * in this case, the aborted transaction should restart on the same core
+						 * where it executed before
+						 */
+						if (m_epoch < b->m_epoch) {
+							m_reschedule = false;
+							return true;
+						} else {
+							b->m_reschedule = false;
+							return false;
+						}
+					}
 					
+					m_reschedule = true;
+					b->m_reschedule = true;
 					/*
 					 * If two writing transactions have a conflict, the transaction
 					 * with the bigger (i.e. younger) timestamp is aborted
@@ -67,7 +84,7 @@ namespace stm {
 					/*
 					 * If we are in a Reading epoch, the writing transaction is aborted
 					 */
-					if (m_epochNum % 2 == 1)
+					if (IS_READING(m_epoch))
 						return !m_isRO;
 						
 						
@@ -85,10 +102,12 @@ namespace stm {
 				 *  the other transaction otherwise
 				 */
 				virtual void onConflictWith(int iCore) {
-					if (m_isRO)
-						stm::scheduler::BiModalScheduler::instance()->moveJobToROQueue(m_iCore);
-					else
-						stm::scheduler::BiModalScheduler::instance()->reschedule(m_iCore,iCore);
+					if (m_reschedule) {
+						if (m_isRO)
+							stm::scheduler::BiModalScheduler::instance()->moveJobToROQueue(m_iCore);
+						else
+							stm::scheduler::BiModalScheduler::instance()->reschedule(m_iCore,iCore);
+					}
 				}
 				
 				virtual void OnOpenWrite()
