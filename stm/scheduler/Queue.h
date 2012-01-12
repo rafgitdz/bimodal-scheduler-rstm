@@ -25,7 +25,7 @@ namespace stm
 			void *m_pJobInfo;
 			bool m_blnFinished;
 			void *m_result;
-			long m_epochNum;
+			long m_epoch;
 
 			// condition variable 
 			pthread_mutex_t* m_jobLock;
@@ -35,7 +35,7 @@ namespace stm
 
 		public:
 			InnerJob(void *(*pFunc)(void*), void *pArgs, void *pJobInfo, ThreadData* pThreadData) 
-				: m_pFunc(pFunc), m_pArgs(pArgs), m_pJobInfo(pJobInfo), m_blnFinished(false), m_result(0), m_epochNum(-1),
+				: m_pFunc(pFunc), m_pArgs(pArgs), m_pJobInfo(pJobInfo), m_blnFinished(false), m_result(0), m_epoch(-1),
 					m_jobLock(pThreadData->getLock()), m_condJobFinished(pThreadData->getCondVar()), m_iJobID(++m_iAllJobsIDs)
 			{
 			}
@@ -70,14 +70,14 @@ namespace stm
 				return m_pJobInfo;
 			}
 			
-			void setEpoch(long epochNum)
+			void setEpoch(long epoch)
 			{
-				m_epochNum = epochNum;
+				m_epoch = epoch;
 			}
 			
 			long getEpoch() 
 			{
-				return m_epochNum;
+				return m_epoch;
 			}
 		};
 
@@ -102,6 +102,8 @@ namespace stm
 			{ return (first->data); }
 
 			void pop();
+			
+			const int& size() { return mySize; }
 
 
 		private:
