@@ -1,34 +1,28 @@
 #include "BiModalScheduler.h" 
 
-#include "RescheduleException.h"
+#include "scheduler_common.h"
 #include <cstdlib>
 
 using namespace std;
 using namespace stm::scheduler;
 
 // static members declarations
-long stm::scheduler::BiModalScheduler::m_lngCoresNum;
-stm::scheduler::BiModalScheduler* stm::scheduler::BiModalScheduler::m_Instance;
-long stm::scheduler::BiModalScheduler::m_epochNum;
+long BiModalScheduler::m_lngCoresNum;
+BiModalScheduler* BiModalScheduler::m_Instance;
+long BiModalScheduler::m_epoch;
 Queue* BiModalScheduler::m_roQueue;
-pthread_mutex_t BiModalScheduler::m_queueLock;
-long BiModalScheduler::m_pushJobCntr;
-long BiModalScheduler::m_popJobCntr;
+int BiModalScheduler::m_roQueueCount;
 
 
-ThreadLock* stm::scheduler::BiModalScheduler::m_threadLock = new ThreadLock();
+ThreadLock* BiModalScheduler::m_threadLock = new ThreadLock();
 
-stm::scheduler::BiModalScheduler::BiModalScheduler() 
+BiModalScheduler::BiModalScheduler() 
 {
 	m_lngCoresNum = getCoresNum();
 	initExecutingThreads();
 	m_roQueue = new Queue();
-	m_epochNum = 0;
-	m_popJobCntr = 0;
-	m_pushJobCntr = 0;
-	
-	// Initialize the lock and condition var
-	pthread_mutex_init(&m_queueLock, NULL);
+	m_epoch = 0;
+	m_roQueueCount = 0;
 }
 
 stm::scheduler::BiModalScheduler::~BiModalScheduler()
@@ -37,12 +31,11 @@ stm::scheduler::BiModalScheduler::~BiModalScheduler()
 	{
 		delete m_threadLock;
 		delete m_Instance;
-		pthread_mutex_destroy(&m_queueLock);
 		delete m_roQueue;
 	}
 }
 
-void stm::scheduler::BiModalScheduler::init()
+void BiModalScheduler::init()
 {
 	// Set the thread's data
 	ThreadData *pThreadData = new ThreadData();
@@ -59,7 +52,7 @@ void stm::scheduler::BiModalScheduler::init()
 	}
 }
 
-stm::scheduler::BiModalScheduler* stm::scheduler::BiModalScheduler::instance()
+stm::scheduler::BiModalScheduler* BiModalScheduler::instance()
 {
 	if (!m_Instance)
 	{
@@ -70,7 +63,7 @@ stm::scheduler::BiModalScheduler* stm::scheduler::BiModalScheduler::instance()
 	return m_Instance;
 }
 
-void stm::scheduler::BiModalScheduler::shutdown()
+void BiModalScheduler::shutdown()
 {
 	BiModalScheduler* scheduler = instance();
 	/* Go over all runner threads, and shut down each thread */
@@ -88,11 +81,27 @@ long stm::scheduler::BiModalScheduler::getCoresNum()
 	return lngCoresNum;
 }
 
+/*
+ * When a new transation enters the system, we schedule it on the 
+ * core which has less transactions in his queue
+ */
 void *stm::scheduler::BiModalScheduler::schedule(void *(*pFunc)(void*), void *pArgs, void *pJobInfo)
 {
 	void* result = NULL;
 	int iCore = 0;
 	iCore = sched_getcpu();
+	bool found = false;
+	int iCurQueueSize;
+	int iMinJobs = m_arThreads[iCore]->getJobsNum();
+	for (int iQueue = 0; (iQueue < m_lngCoresNum) && !found; iQueue++) {
+		iCurQueueSize = m_arThreads[iQueue]->getJobsNum();
+		if (iCurQueueSize <= iMinJobs) {
+			iCore = iQueue;
+			iMinJobs = iCurQueueSize;
+			if (iCurQueueSize == 0)
+				found = true;
+		}
+	}
 	result = m_arThreads[iCore]->addJob(pFunc, pArgs, pJobInfo, threadDataManager.getThreadData());
 
 	return result;
@@ -127,40 +136,32 @@ void BiModalScheduler::reschedule(int iFromCore, int iToCore)
 	throw RescheduleException();
 }
 
-long BiModalScheduler::getCurrentEpoch() {
-	return m_epochNum;
-}
-
 long BiModalScheduler::getCurrentEpoch(int iCoreNum) {
 	return m_arThreads[iCoreNum]->getCurrentEpoch();
 }
 
 void BiModalScheduler::moveJobToROQueue(InnerJob *job) {
 	
-	pthread_mutex_lock(&m_queueLock);
+    m_threadLock->Lock();
 	m_roQueue->push(job);
-	m_pushJobCntr++;
-	if (m_pushJobCntr == getCoresNum()) {
-		m_epochNum++;
-		m_popJobCntr = 0;
-		m_pushJobCntr = 0;
-	}
-	pthread_mutex_unlock(&m_queueLock);
+    m_threadLock->Unlock();
 	
 	throw RescheduleException();
 }
 
-InnerJob* BiModalScheduler::getJobFromROQueue() {
-	pthread_mutex_lock(&m_queueLock);
-	InnerJob *job = m_roQueue->front();
-	job->setEpochNum(m_epochNum);
-	m_roQueue->pop();
-	m_popJobCntr++;
-	if (m_popJobCntr == getCoresNum()) {
-		m_epochNum++;
-	}
+InnerJob* BiModalScheduler::roQueueDeque() {
 	
-	pthread_mutex_unlock(&m_queueLock);
+	InnerJob *job = m_roQueue->front();
+	m_roQueue->pop();
 	
 	return job;
+}
+
+bool BiModalScheduler::allQueuesEmpty() {
+	bool empty = true;
+	for (int i = 0; (i < 2 && empty); i++)
+		for (int iQueue = 0; (iQueue < m_lngCoresNum && empty); iQueue++) {
+			empty = m_arThreads[iQueue]->getJobsNum() == 0;
+		}
+	return empty;
 }

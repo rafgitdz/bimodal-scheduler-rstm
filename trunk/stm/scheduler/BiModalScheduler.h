@@ -42,15 +42,13 @@ namespace stm {
 			// The number of the current epoch
 			static long m_epoch;
 			static int m_roQueueCount;
-			static int m_roQueueSize;
 			
 			// The Queue where the read-only transactions will be stored
 			static Queue* m_roQueue;
 			
 			// condition variable
 			static pthread_mutex_t m_queueLock;
-			static long m_pushJobCntr;
-			static long m_popJobCntr;
+
 		public:
 			// Returns the number of cores that are on the machine
 			long getCoresNum();
@@ -77,15 +75,14 @@ namespace stm {
 
 			InnerJob* roQueueDeque();
 			
-			long getCurrentEpoch();
 			long getCurrentEpoch(int iCore);
 			
-			long& epoch() { return m_epoch; }
+			long* epoch() { return &m_epoch; }
 			
-			int& roQueueCount() { return m_roQueueCount; }
-			int& roQueueSize() { return m_roQueueSize; }
+			int* roQueueCount() { return &m_roQueueCount; }
+			long roQueueSize() { return m_roQueue->size(); }
 			
-			bool allQueueEmpty();
+			bool allQueuesEmpty();
 	};
 		
 	}

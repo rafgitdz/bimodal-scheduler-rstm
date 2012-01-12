@@ -28,9 +28,8 @@ namespace stm
 			// Queue
 			Queue* m_queue;
 
-			// condition variable
+			// queue lock
 			pthread_mutex_t m_queueLock;
-			pthread_cond_t m_condQueueNotEmpty;
 
 			// The job that runs in the thread info, lets to compare against other jobs
 			void *m_currJobInfo;
@@ -77,7 +76,9 @@ namespace stm
 			// Shutdown transactions running on this thread
 			void shutdown();
 			
-			long getCurrentEpoch() { return m_currJob->getEpochNum(); }
+			long getCurrentEpoch() { return m_currJob->getEpoch(); }
+			
+			const int& getJobsNum() { return m_queue->size(); }
 
 		};
 	}

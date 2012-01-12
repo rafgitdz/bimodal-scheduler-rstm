@@ -11,10 +11,10 @@ LIBSCHEDULER = ../obj/libscheduler.a
 all:  $(SCHEDULER_OBJS) $(LIBSCHEDULER)
 scheduler: $(SCHEDULER_OBJS) $(LIBSCHEDULER)
 
-BiModalScheduler.o: BiModalScheduler.cpp BiModalScheduler.h RescheduleException.h RunnerThread.o ThreadLock.o Queue.o ThreadData.o
+BiModalScheduler.o: BiModalScheduler.cpp BiModalScheduler.h scheduler_common.h RunnerThread.o ThreadLock.o Queue.o ThreadData.o
 	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -c $< -o $@
 
-RunnerThread.o: RunnerThread.cpp RunnerThread.h RescheduleException.h Queue.o ThreadData.o
+RunnerThread.o: RunnerThread.cpp RunnerThread.h scheduler_common.h Queue.o ThreadData.o
 	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -c $< -o $@
 
 ThreadLock.o: ThreadLock.cpp ThreadLock.h

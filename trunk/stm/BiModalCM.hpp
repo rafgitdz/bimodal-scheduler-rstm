@@ -62,19 +62,19 @@ namespace stm {
 					 * with the bigger (i.e. younger) timestamp is aborted
 					 */
 					if (!m_isRO && !b->isReadOnly())
-						return (b->getTimestamp() < m_timestamp)
+						return (b->getTimestamp() < m_timestamp);
 						
 					/*
 					 * If we are in a Reading epoch, the writing transaction is aborted
 					 */
-					if (epochNum % 2 == 1)
-						return !m_isRo;
+					if (m_epochNum % 2 == 1)
+						return !m_isRO;
 						
 						
 					/*
 					 * If we are in a Writing epoch, the read-only transaction is aborted
 					 */
-					 return m_isRo;
+					 return m_isRO;
 						
 					
 				}
