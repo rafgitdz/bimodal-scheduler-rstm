@@ -70,12 +70,12 @@ namespace stm
 				return m_pJobInfo;
 			}
 			
-			void setEpochNum(long epochNum)
+			void setEpoch(long epochNum)
 			{
 				m_epochNum = epochNum;
 			}
 			
-			long getEpochNum() 
+			long getEpoch() 
 			{
 				return m_epochNum;
 			}

@@ -1,12 +1,14 @@
 #include "RunnerThread.h"
 
 #include <cstdlib>
+#include <algorithm>
 #include <unistd.h>
 #include <iostream>
 
-#include "RescheduleException.h"
+#include "scheduler_common.h"
 #include "BiModalScheduler.h"
 #include "rstm.h" /* for stm::init - initializing stm threads */
+#include "atomic_ops.h"
 
 using namespace std;
 using namespace stm::scheduler;
@@ -90,21 +92,53 @@ void RunnerThread::doJobs()
 {
 	while (1)
 	{
-		// Wait for a job
-		pthread_mutex_lock(&m_queueLock);
-		while (m_queue->empty())
-		{
-			pthread_cond_wait(&m_condQueueNotEmpty, &m_queueLock);
-		}		
-		m_currJob = m_queue->front();
-		if (m_currJob->getEpochNum() == -1)
-			m_currJob->setEpochNum(BiModalScheduler::instance()->getCurrentEpoch());
+		// Waiting for a job
+		while (!m_currJob) {
+			long epoch = BiModalScheduler::instance()->epoch();
+			if (IS_READING(epoch)) {
+				/*
+				 * If we are in a reading epoch, we have to take a job in the ro queue
+				 */
+				int count = BiModalScheduler::instance->roQueueCount();
+				if (count > 1) {
+					if (bool_cas(BiModalScheduler::instance->roQueueCount(),count, count - 1)) {
+						m_currJob = BiModalScheduler::instance->roQueueDeque();
+						m_currJob->setEpoch(epoch);
+					} else continue;
+				}
+				else
+					if (bool_cas(BiModalScheduler::instance->roQueueCount(),1,0)) {
+						m_currJob = BiModalScheduler::instance->roQueueDeque();
+						m_currJob->setEpoch(epoch);
+						// If this is the last job to take in the ro queue, we change the epoch
+						bool_cas(BiModalScheduler::instance()->epoch(), epoch, epoch +1);
+					} else continue;
+			} else {
+				/*
+				 * If we are in a writing epoch we first check if we have to go to a reading epoch
+				 */
+				if (BiModalScheduler::instance()->roQueueSize() >= BiModalScheduler::instance()->getCoresNum()
+					|| BiModalScheduler::instance->allQueuesEmpty()) {
+					if (BiModalScheduler::instance()->roQueueSize() != 0)
+						if (bool_cas(BiModalScheduler::instance->epoch(), epoch, epoch +1))
+						// we set the number of transactions to take from the ro queue
+							BiModalScheduler::instance->roQueueCount() = min(m, BiModalScheduler::instance()->roQueueSize());
+					continue;
+				} else {
+					// if we are in a writing epoch and have a job, we execute it
+					if (!m_queue->empty()) {
+						pthread_mutex_lock(&m_queueLock);
+						m_currJob = m_queue->front();
+						m_currJob->setEpochNum(epoch);
 			
-		m_currJobInfo = m_currJob->getJobInfo();
-//		cout << "processing a job" << jobToExecute->getJobID() << endl;
-		m_queue->pop(); // Remove the job from the queue
-		pthread_mutex_unlock(&m_queueLock);
-
+						m_currJobInfo = m_currJob->getJobInfo();
+						m_queue->pop(); // Remove the job from the queue
+						pthread_mutex_unlock(&m_queueLock);
+					}
+				}
+			}
+				
+		}
 		try
 		{
 			// Execute the job

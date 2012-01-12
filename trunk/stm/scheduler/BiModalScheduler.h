@@ -34,14 +34,15 @@ namespace stm {
 			// An array of threads that are used, each thread for a core
 			RunnerThread **m_arThreads;
 			
-			// Returns the number of cores that are on the machine
-			long getCoresNum();
+
 
 			// Initializes the threads that are responsible to do activate the transaction-function
 			void initExecutingThreads();
 			
 			// The number of the current epoch
-			static long m_epochNum;
+			static long m_epoch;
+			static int m_roQueueCount;
+			static int m_roQueueSize;
 			
 			// The Queue where the read-only transactions will be stored
 			static Queue* m_roQueue;
@@ -51,6 +52,9 @@ namespace stm {
 			static long m_pushJobCntr;
 			static long m_popJobCntr;
 		public:
+			// Returns the number of cores that are on the machine
+			long getCoresNum();
+		
 			/*
 			 * Schedules the transaction thread that calls it.
 			 * Upon return, the thread affinity is set, and the thread
@@ -70,13 +74,18 @@ namespace stm {
 			
 			void moveJobToROQueue(int iFromCore) { m_arThreads[iFromCore]->moveJobToROQueue();}
 			
-			/*
-			 * Schedules the job on the head of the RO Queue to the head of the iToCore
-			 */
-			InnerJob* getJobFromROQueue();
+
+			InnerJob* roQueueDeque();
 			
 			long getCurrentEpoch();
 			long getCurrentEpoch(int iCore);
+			
+			long& epoch() { return m_epoch; }
+			
+			int& roQueueCount() { return m_roQueueCount; }
+			int& roQueueSize() { return m_roQueueSize; }
+			
+			bool allQueueEmpty();
 	};
 		
 	}
