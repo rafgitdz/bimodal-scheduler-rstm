@@ -48,8 +48,14 @@ namespace stm {
 				virtual void OnBeginTransaction() 
 				{
 					//std::cout << "Beginning transaction\n";
+					m_isRO = true;
+					struct timeval t;
+
+					gettimeofday(&t, NULL);
+					m_timestamp = t.tv_sec;
 					m_iCore = sched_getcpu();
 					m_epoch = stm::scheduler::BiModalScheduler::instance()->getCurrentEpoch(m_iCore);
+					//std::cout << "epoch: " << m_epoch << "\n";
 				}
 				
 				bool ShouldAbort(ContentionManager *enemy) 
@@ -122,6 +128,7 @@ namespace stm {
 					if (m_isRO)
 						m_isRO = false;
 				}
+				
 		};
 		
 	}

@@ -585,7 +585,7 @@ namespace stm
             cm.onTxAborted();
 
             if (shouldAbort) {
-				#ifdef USE_BIMODAL
+#ifdef USE_BIMODAL
 			if (reschedule_core_num != -1) {
 				cm.onConflictWith(reschedule_core_num);
 				reschedule_core_num = -1;
