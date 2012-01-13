@@ -28,7 +28,7 @@ namespace stm {
 			
 			// Members and methods related to the scheduling
 		private:
-
+			friend class RunnerThread;
 			// Holds the number of cores in the system
 			static long m_lngCoresNum;
 			// An array of threads that are used, each thread for a core
@@ -40,15 +40,12 @@ namespace stm {
 			void initExecutingThreads();
 			
 			// The number of the current epoch
-			static long m_epoch;
-			static int m_roQueueCount;
+			long* m_epoch;
+			int* m_roQueueCount;
 			
 			// The Queue where the read-only transactions will be stored
-			static Queue* m_roQueue;
+			Queue* m_roQueue;
 			
-			// condition variable
-			static pthread_mutex_t m_queueLock;
-
 		public:
 			// Returns the number of cores that are on the machine
 			long getCoresNum();
@@ -76,11 +73,6 @@ namespace stm {
 			InnerJob* roQueueDeque();
 			
 			long getCurrentEpoch(int iCore);
-			
-			long* epoch() { return &m_epoch; }
-			
-			int* roQueueCount() { return &m_roQueueCount; }
-			long roQueueSize() { return m_roQueue->size(); }
 			
 			bool allQueuesEmpty();
 	};

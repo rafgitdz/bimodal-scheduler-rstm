@@ -92,36 +92,39 @@ void RunnerThread::doJobs()
 	{
 		// Waiting for a job
 		while (!m_currJob) {
-			long epoch = *(BiModalScheduler::instance()->epoch());
+			long epoch = *BiModalScheduler::instance()->m_epoch;
 			if (IS_READING(epoch)) {
 				/*
 				 * If we are in a reading epoch, we have to take a job in the ro queue
 				 */
-				int count = *(BiModalScheduler::instance()->roQueueCount());
+				int count = *BiModalScheduler::instance()->m_roQueueCount;
 				if (count > 1) {
-					if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->roQueueCount(),count, count - 1)) {
+					if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->m_roQueueCount,count, count - 1)) {
 						m_currJob = BiModalScheduler::instance()->roQueueDeque();
 						m_currJob->setEpoch(epoch);
 					} else continue;
 				}
 				else
-					if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->roQueueCount(),1,0)) {
+					if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->m_roQueueCount,1,0)) {
 						m_currJob = BiModalScheduler::instance()->roQueueDeque();
 						m_currJob->setEpoch(epoch);
 						// If this is the last job to take in the ro queue, we change the epoch
-						bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->epoch(), epoch, epoch +1);
+						bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->m_epoch, epoch, epoch +1);
 					} else continue;
 			} else {
 				/*
 				 * If we are in a writing epoch we first check if we have to go to a reading epoch
 				 */
-				if (BiModalScheduler::instance()->roQueueSize() >= BiModalScheduler::instance()->getCoresNum()
+				if (BiModalScheduler::instance()->m_roQueue->size() >= BiModalScheduler::instance()->getCoresNum()
 					|| BiModalScheduler::instance()->allQueuesEmpty()) {
-					if (BiModalScheduler::instance()->roQueueSize() != 0)
-						if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->epoch(), epoch, epoch +1))
+						
+					if (BiModalScheduler::instance()->m_roQueue->size() != 0)
+						if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->m_epoch, epoch, epoch +1))
 						// we set the number of transactions to take from the ro queue
-							*(BiModalScheduler::instance()->roQueueCount()) = 
-								min(BiModalScheduler::instance()->getCoresNum(), BiModalScheduler::instance()->roQueueSize());
+							*BiModalScheduler::instance()->m_roQueueCount = 
+								min(BiModalScheduler::instance()->getCoresNum(), (long)BiModalScheduler::instance()->m_roQueue->size());
+							
+							
 					continue;
 				} else {
 					// if we are in a writing epoch and have a job, we execute it

@@ -11,9 +11,6 @@ using namespace stm::scheduler;
 // static members declarations
 long BiModalScheduler::m_lngCoresNum;
 BiModalScheduler* BiModalScheduler::m_Instance;
-long BiModalScheduler::m_epoch;
-Queue* BiModalScheduler::m_roQueue;
-int BiModalScheduler::m_roQueueCount;
 
 
 ThreadLock* BiModalScheduler::m_threadLock = new ThreadLock();
@@ -23,8 +20,8 @@ BiModalScheduler::BiModalScheduler()
 	m_lngCoresNum = getCoresNum();
 	initExecutingThreads();
 	m_roQueue = new Queue();
-	m_epoch = 0;
-	m_roQueueCount = 0;
+	m_epoch = new long(0);
+	m_roQueueCount = new int(0);
 }
 
 stm::scheduler::BiModalScheduler::~BiModalScheduler()
@@ -34,6 +31,8 @@ stm::scheduler::BiModalScheduler::~BiModalScheduler()
 		delete m_threadLock;
 		delete m_Instance;
 		delete m_roQueue;
+		delete m_epoch;
+		delete m_roQueueCount;
 	}
 }
 
@@ -145,9 +144,11 @@ long BiModalScheduler::getCurrentEpoch(int iCoreNum) {
 }
 
 void BiModalScheduler::moveJobToROQueue(InnerJob *job) {
-	
+
     m_threadLock->Lock();
 	m_roQueue->push(job);
+	cout << "Putting job in RO" <<endl;
+	cout << "RO size :" << m_roQueue->size() << endl;
     m_threadLock->Unlock();
 	
 	throw RescheduleException();
@@ -155,8 +156,10 @@ void BiModalScheduler::moveJobToROQueue(InnerJob *job) {
 
 InnerJob* BiModalScheduler::roQueueDeque() {
 	
+	m_threadLock->Lock();
 	InnerJob *job = m_roQueue->front();
 	m_roQueue->pop();
+	m_threadLock->Unlock();
 	
 	return job;
 }
