@@ -178,7 +178,11 @@ static void* work_thread(void* arg)
     // a sanity check
     if (args->id != 0)
         stm::shutdown();
-
+	
+	#ifdef USE_BIMODAL
+		stm::scheduler::BiModalScheduler::shutdown();
+	#endif
+    
     return 0;
 }
 
