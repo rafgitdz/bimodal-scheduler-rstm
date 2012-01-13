@@ -33,18 +33,29 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
+#include "scheduler/BiModalScheduler.h"
 
-#include "LinkedList.h"
+#include "LinkedListBM.h"
 
 using namespace stm;
 using namespace bench;
 
+typedef struct
+{
+        LinkedListBM* object;
+        const LinkedListBM* objectConst;
+        int val;
+        verifier v;
+        unsigned long v_param;
+} HelpingStruct;
+
+
 // constructor just makes a sentinel for the data structure
-LinkedList::LinkedList() : sentinel(new LLNode())
+LinkedListBM::LinkedListBM() : sentinel(new LLNode())
 { }
 
 // simple sanity check:  make sure all elements of the list are in sorted order
-bool LinkedList::isSane(void) const
+bool LinkedListBM::isSane2(void) const
 {
     bool sane = false;
 
@@ -71,9 +82,30 @@ bool LinkedList::isSane(void) const
     return sane;
 }
 
+static void *isSaneCallback(void *args)
+{
+        HelpingStruct* st = (HelpingStruct*)args;
+
+        bool* pblnResult = new bool;
+        *pblnResult = st->objectConst->isSane2();
+        delete st; // free the memory
+        return pblnResult;
+}
+
+bool LinkedListBM::isSane(void) const {
+	stm::scheduler::BiModalScheduler* sched = stm::scheduler::BiModalScheduler::instance();
+	
+	 HelpingStruct* st = new HelpingStruct();
+     st->objectConst = this;
+     bool* pblnResult = (bool *)sched->schedule(&isSaneCallback, st, NULL);
+     bool blnResult = *pblnResult;
+     delete pblnResult;
+     return blnResult;
+}
+
 // extended sanity check, does the same as the above method, but also calls v()
 // on every item in the list
-bool LinkedList::extendedSanityCheck(verifier v, unsigned long v_param) const
+bool LinkedListBM::extendedSanityCheck2(verifier v, unsigned long v_param) const
 {
     bool sane = false;
 
@@ -101,9 +133,31 @@ bool LinkedList::extendedSanityCheck(verifier v, unsigned long v_param) const
     return sane;
 }
 
+static void *extendedSanityCheckCallback(void *args) {
+	    HelpingStruct* st = (HelpingStruct*)args;
+	    
+        st->objectConst->extendedSanityCheck2(st->v, st->v_param);
+        delete st; // free the memory
+        return NULL;
+}
+
+bool LinkedListBM::extendedSanityCheck(verifier v, unsigned long v_param) const {
+	
+	stm::scheduler::BiModalScheduler* sched = stm::scheduler::BiModalScheduler::instance();
+
+        HelpingStruct* st = new HelpingStruct();
+        st->objectConst = this;
+        st->v = v;
+        st->v_param = v_param;
+        bool* pblnResult = (bool *)sched->schedule(&extendedSanityCheckCallback, st, NULL);
+        bool blnResult = *pblnResult;
+		delete pblnResult;
+		return blnResult;
+}
+
 // insert method; find the right place in the list, add val so that it is in
 // sorted order; if val is already in the list, exit without inserting
-void LinkedList::insert(int val)
+void LinkedListBM::insert2(int val)
 {
     BEGIN_TRANSACTION;
 
@@ -129,9 +183,27 @@ void LinkedList::insert(int val)
     END_TRANSACTION;
 }
 
+static void *insertCallback(void *args)
+{
+        HelpingStruct* st = (HelpingStruct*)args;
+
+        st->object->insert2(st->val);
+        delete st; // free the memory
+        return NULL;
+}
+
+void LinkedListBM::insert(int val)
+{
+    stm::scheduler::BiModalScheduler* sched = stm::scheduler::BiModalScheduler::instance();
+
+        HelpingStruct* st = new HelpingStruct();
+        st->object = this;
+        st->val = val;
+        sched->schedule(&insertCallback, st, NULL);
+}
 
 // search function
-bool LinkedList::lookup(int val) const
+bool LinkedListBM::lookup2(int val) const
 {
     bool found = false;
 
@@ -155,9 +227,29 @@ bool LinkedList::lookup(int val) const
     return found;
 }
 
+static void *lookupCallback(void *args)
+{
+        HelpingStruct* st = (HelpingStruct*)args;
 
+        bool* pblnResult = new bool;
+        *pblnResult = st->objectConst->lookup2(st->val);
+        delete st; // free the memory
+        return pblnResult;
+}
+
+bool LinkedListBM::lookup(int val) const
+{
+    stm::scheduler::BiModalScheduler* sched = stm::scheduler::BiModalScheduler::instance();
+
+        HelpingStruct* st = new HelpingStruct();
+        st->objectConst = this;
+        bool* pblnResult = (bool *)sched->schedule(&lookupCallback, st, NULL);
+        bool blnResult = *pblnResult;
+        delete pblnResult;
+        return blnResult;
+}
 // remove a node if its value == val
-void LinkedList::remove(int val)
+void LinkedListBM::remove2(int val)
 {
     BEGIN_TRANSACTION;
 
@@ -190,9 +282,28 @@ void LinkedList::remove(int val)
     END_TRANSACTION;
 }
 
+static void *removeCallback(void *args)
+{
+        HelpingStruct* st = (HelpingStruct*)args;
+
+        st->object->remove2(st->val);
+        delete st; // free the memory
+        return NULL;
+}
+
+void LinkedListBM::remove(int val)
+{
+    stm::scheduler::BiModalScheduler* sched = stm::scheduler::BiModalScheduler::instance();
+
+        HelpingStruct* st = new HelpingStruct();
+        st->object = this;
+        st->val = val;
+        sched->schedule(&removeCallback, st, NULL);
+}
+
 
 // print the list
-void LinkedList::print() const
+void LinkedListBM::print2() const
 {
     BEGIN_TRANSACTION;
 
@@ -213,4 +324,21 @@ void LinkedList::print() const
     }
 
     END_TRANSACTION;
+}
+
+static void* printCallback(void *args) {
+	 HelpingStruct* st = (HelpingStruct*)args;
+
+        st->object->print2();
+        delete st; // free the memory
+        return NULL;
+}
+
+void LinkedListBM::print() const {
+	stm::scheduler::BiModalScheduler* sched = stm::scheduler::BiModalScheduler::instance();
+	
+        HelpingStruct* st = new HelpingStruct();
+        st->objectConst = this;
+        sched->schedule(&printCallback, st, NULL);
+	
 }

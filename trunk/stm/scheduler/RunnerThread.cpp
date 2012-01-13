@@ -69,7 +69,7 @@ void RunnerThread::threadStart()
 	setAffinity(m_iCoreID);
 
 	// Introduce the thread to the stm
-	stm::init("BiModal", "vis-eager", false, m_iCoreID);
+	stm::init("Bimodal", "vis-eager", false);
 
 	doJobs();
 }
@@ -141,6 +141,7 @@ void RunnerThread::doJobs()
 		try
 		{
 			// Execute the job
+			//cout << "executing job" << endl;
 			m_currJob->execute();
 		}
 		catch (RescheduleException) // If a rescheduling has happened just move on to the next job

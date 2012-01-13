@@ -158,7 +158,7 @@ namespace stm
 			 * the core where this transaction have to be rescheduled,
 			 * when the transaction rollbacks
 			 */
-			unsigned long reschedule_core_num;
+			long reschedule_core_num;
 			
 			/**
 			 *  the core where this transaction is executed
@@ -584,9 +584,10 @@ namespace stm
             // Contention Manager notification
             cm.onTxAborted();
 #ifdef USE_BIMODAL
-			iCore = reschedule_core_num;
-			reschedule_core_num = -1;
-			cm.onConflictWith(iCore);
+			if (reschedule_core_num != -1) {
+				cm.onConflictWith(reschedule_core_num);
+				reschedule_core_num = -1;
+			}
 #endif
             if (shouldAbort) {
                 throw Aborted();

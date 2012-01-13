@@ -2,7 +2,7 @@
 #define __BIMODAL_CM_HPP__
 
 #include <sched.h>
-
+#include <iostream>
 #include "ContentionManager.h"
 #include "BiModalScheduler.h"
 #include "scheduler_common.h"
@@ -29,6 +29,7 @@ namespace stm {
 			public:
 				
 				BiModalCM() : m_isRO(true), m_reschedule(false) {
+					std::cout << "creating transaction\n";
 					struct timeval t;
 
 					gettimeofday(&t, NULL);
@@ -46,13 +47,18 @@ namespace stm {
 				 */
 				virtual void OnBeginTransaction() 
 				{
+					//std::cout << "Beginning transaction\n";
 					m_iCore = sched_getcpu();
 					m_epoch = stm::scheduler::BiModalScheduler::instance()->getCurrentEpoch(m_iCore);
 				}
 				
 				bool ShouldAbort(ContentionManager *enemy) 
 				{
+					std::cout << "conflict!\n";
 					BiModalCM* b = dynamic_cast<BiModalCM*>(enemy);
+					std::cout << "timestamp:" << m_timestamp << "\n";
+					if (m_isRO || b->m_isRO)
+						std::cout << "we have a read!\n";
 					
 					/*
 					 * If two transactions with different epoch ids have a conflict
@@ -102,7 +108,8 @@ namespace stm {
 				 *  the other transaction otherwise
 				 */
 				virtual void onConflictWith(int iCore) {
-					if (m_reschedule) {
+
+					if (m_reschedule && iCore !=-1) {
 						if (m_isRO)
 							stm::scheduler::BiModalScheduler::instance()->moveJobToROQueue(m_iCore);
 						else

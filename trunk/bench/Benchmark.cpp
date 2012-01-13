@@ -137,6 +137,10 @@ static void* work_thread(void* arg)
         stm::init(BMCONFIG.cm_type, BMCONFIG.stm_validation,
                   BMCONFIG.use_static_cm);
 
+#ifdef USE_BIMODAL
+	stm::scheduler::BiModalScheduler::init();
+#endif
+
     Benchmark* b = args->b;
     i = 0;
 
