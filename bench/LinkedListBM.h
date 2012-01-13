@@ -32,8 +32,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __BENCH_LINKED_LIST_H__
-#define __BENCH_LINKED_LIST_H__
+#ifndef __BENCH_LINKED_LIST_BM_H__
+#define __BENCH_LINKED_LIST_BM_H__
 
 #include <stm_api.h>
 #include "LinkedList.h"
@@ -49,7 +49,7 @@ namespace bench
 
 
     // Set of LLNodes represented as a linked list in sorted order
-    class LinkedList : public IntSet
+    class LinkedListBM : public IntSet
     {
       private:
 
@@ -57,7 +57,7 @@ namespace bench
 
       public:
 
-        LinkedList();
+        LinkedListBM();
 
         // insert a node if it doesn't already exist
         virtual void insert(int val);
@@ -78,7 +78,27 @@ namespace bench
         // v(x, verifier_param) is true
         virtual bool extendedSanityCheck(verifier v,
                                          unsigned long param) const;
+                                         
+		virtual void insert2(int val);
+
+        // true iff val is in the data structure
+        virtual bool lookup2(int val) const;
+
+        // remove a node if its value = val
+        virtual void remove2(int val);
+
+        // make sure the list is in sorted order
+        virtual bool isSane2() const;
+
+        // print the whole list (assumes isolation)
+        virtual void print2() const;
+
+        // make sure the list is in sorted order and for each node x,
+        // v(x, verifier_param) is true
+        virtual bool extendedSanityCheck2(verifier v,
+                                         unsigned long param) const;
+
     };
 
 } // namespace bench
-#endif // __BENCH_LINKED_LIST_H__
+#endif // __BENCH_LINKED_LIST_BM_H__

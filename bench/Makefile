@@ -42,9 +42,9 @@ OBJFILES = $(OBJDIR)/BenchMain.o          $(OBJDIR)/Benchmark.o \
            $(OBJDIR)/LinkedList.o         $(OBJDIR)/LinkedListRelease.o \
            $(OBJDIR)/RandomGraphList.o    $(OBJDIR)/RBTree.o \
            $(OBJDIR)/RBTreeLarge.o \
-           $(OBJDIR)/CGHash.o
+           $(OBJDIR)/CGHash.o             $(OBJDIR)/LinkedListBM.o
 
-BM_HEADERS = Counter.h FGL.h Hash.h LinkedList.h LFUCache.h \
+BM_HEADERS = Counter.h FGL.h Hash.h LinkedList.h LFUCache.h LinkedListBM.h\
              LinkedListRelease.h RBTree.h RandomGraphList.h CGHash.h \
              RBTreeLarge.h IntSet.h PrivList.h \
              ../stm/stm_api.h \
@@ -71,6 +71,10 @@ $(OBJDIR)/LFUCache.o: LFUCache.cpp LFUCache.h $(STM_LIB) Benchmark.h
 	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -o $@ -c $<
 
 $(OBJDIR)/LinkedList.o: LinkedList.cpp LinkedList.h $(STM_LIB) IntSet.h \
+                        Benchmark.h
+	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -o $@ -c $<
+
+$(OBJDIR)/LinkedListBM.o: LinkedListBM.cpp LinkedListBM.h $(STM_LIB) IntSet.h \
                         Benchmark.h
 	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -o $@ -c $<
 

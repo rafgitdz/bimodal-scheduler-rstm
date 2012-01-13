@@ -3,6 +3,8 @@
 #include "scheduler_common.h"
 #include <cstdlib>
 
+#include <iostream>
+
 using namespace std;
 using namespace stm::scheduler;
 
@@ -50,6 +52,7 @@ void BiModalScheduler::init()
 		}
 		m_threadLock->Unlock();
 	}
+	cout << "Scheduler initialized" << endl;
 }
 
 stm::scheduler::BiModalScheduler* BiModalScheduler::instance()
@@ -103,6 +106,7 @@ void *stm::scheduler::BiModalScheduler::schedule(void *(*pFunc)(void*), void *pA
 		}
 	}
 	result = m_arThreads[iCore]->addJob(pFunc, pArgs, pJobInfo, threadDataManager.getThreadData());
+	//cout << "Job scheduled in core " << iCore << endl;
 
 	return result;
 }
@@ -131,7 +135,7 @@ void stm::scheduler::BiModalScheduler::initExecutingThreads()
 
 void BiModalScheduler::reschedule(int iFromCore, int iToCore)
 {
-	//cout << "Rescheduling from: " << iFromCore << " to: " << iToCore << endl;
+	cout << "Rescheduling from: " << iFromCore << " to: " << iToCore << endl;
 	m_arThreads[iFromCore]->moveJob(m_arThreads[iToCore]);
 	throw RescheduleException();
 }

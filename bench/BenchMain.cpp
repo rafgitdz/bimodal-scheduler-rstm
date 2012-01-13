@@ -32,6 +32,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef USE_BIMODAL
+#define USE_BIMODAL
+#endif
+
 #include <unistd.h>
 
 #include <cstdlib>
@@ -51,6 +55,10 @@
 #include "RBTree.h"
 #include "RBTreeLarge.h"
 #include "RandomGraphList.h"
+
+#ifdef USE_BIMODAL
+#include "LinkedListBM.h"
+#endif
 
 using namespace bench;
 
@@ -203,6 +211,10 @@ int main(int argc, char** argv)
         B = new LFUTest();
     else if (BMCONFIG.bm_name == "LinkedList")
         B = new IntSetBench(new LinkedList(), BMCONFIG.datasetsize);
+#ifdef USE_BIMODAL
+	else if (BMCONFIG.bm_name == "LinkedListBM")
+        B = new IntSetBench(new LinkedListBM(), BMCONFIG.datasetsize);
+#endif
     else if (BMCONFIG.bm_name == "LinkedListRelease")
         B = new IntSetBench(new LinkedListRelease(), BMCONFIG.datasetsize);
     else if (BMCONFIG.bm_name == "PrivList")
