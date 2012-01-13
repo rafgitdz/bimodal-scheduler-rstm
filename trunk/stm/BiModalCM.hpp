@@ -60,12 +60,8 @@ namespace stm {
 				
 				bool ShouldAbort(ContentionManager *enemy) 
 				{
-					std::cout << "conflict!\n";
 					BiModalCM* b = dynamic_cast<BiModalCM*>(enemy);
-					std::cout << "timestamp:" << m_timestamp << "\n";
-					if (m_isRO || b->m_isRO)
-						std::cout << "we have a read!\n";
-					
+
 					/*
 					 * If two transactions with different epoch ids have a conflict
 					 * the transaction with the bigger epoch number is aborted

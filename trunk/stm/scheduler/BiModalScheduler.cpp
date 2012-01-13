@@ -73,6 +73,7 @@ void BiModalScheduler::shutdown()
 	{
 		scheduler->m_arThreads[iThread]->shutdown();
 	}
+	delete scheduler;
 
 }
 
