@@ -583,13 +583,14 @@ namespace stm
 
             // Contention Manager notification
             cm.onTxAborted();
-#ifdef USE_BIMODAL
+
+            if (shouldAbort) {
+				#ifdef USE_BIMODAL
 			if (reschedule_core_num != -1) {
 				cm.onConflictWith(reschedule_core_num);
 				reschedule_core_num = -1;
 			}
 #endif
-            if (shouldAbort) {
                 throw Aborted();
             }
         }
