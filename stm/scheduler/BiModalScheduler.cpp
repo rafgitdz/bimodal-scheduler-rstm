@@ -11,17 +11,18 @@ using namespace stm::scheduler;
 // static members declarations
 long BiModalScheduler::m_lngCoresNum;
 BiModalScheduler* BiModalScheduler::m_Instance;
-
+SchedulerStatistics* BiModalScheduler::stats;
 
 ThreadLock* BiModalScheduler::m_threadLock = new ThreadLock();
 
-BiModalScheduler::BiModalScheduler() 
+BiModalScheduler::BiModalScheduler()
 {
 	m_lngCoresNum = getCoresNum();
 	initExecutingThreads();
 	m_roQueue = new Queue();
 	m_epoch = new long(0);
 	m_roQueueCount = new int(0);
+	stats = new SchedulerStatistics();
 }
 
 stm::scheduler::BiModalScheduler::~BiModalScheduler()
@@ -29,10 +30,10 @@ stm::scheduler::BiModalScheduler::~BiModalScheduler()
 	if (m_Instance)
 	{
 		delete m_threadLock;
-		delete m_Instance;
 		delete m_roQueue;
 		delete m_epoch;
 		delete m_roQueueCount;
+		delete stats;
 	}
 }
 
@@ -48,6 +49,7 @@ void BiModalScheduler::init()
 		if (!m_Instance)
 		{
 			m_Instance = new BiModalScheduler();
+			stats = new SchedulerStatistics();
 			cout << "Scheduler initialized" << endl;
 		}
 		m_threadLock->Unlock();
@@ -68,13 +70,14 @@ stm::scheduler::BiModalScheduler* BiModalScheduler::instance()
 void BiModalScheduler::shutdown()
 {
 	BiModalScheduler* scheduler = instance();
-	cout << "final epoch: " << *(scheduler->m_epoch) << endl;
+	scheduler->stats->finalEpoch = *scheduler->m_epoch;
+	stats->printStats();
 	/* Go over all runner threads, and shut down each thread */
 	for (int iThread = 0; iThread < m_lngCoresNum; iThread++)
 	{
 		scheduler->m_arThreads[iThread]->shutdown();
 	}
-
+	delete m_Instance;
 }
 
 long stm::scheduler::BiModalScheduler::getCoresNum()
@@ -148,8 +151,8 @@ void BiModalScheduler::moveJobToROQueue(InnerJob *job) {
 
     m_threadLock->Lock();
 	m_roQueue->push(job);
-	cout << "Putting job in RO" <<endl;
-	cout << "RO size :" << m_roQueue->size() << endl;
+	//cout << "Putting job in RO" <<endl;
+	//cout << "RO size :" << m_roQueue->size() << endl;
     m_threadLock->Unlock();
 	
 	throw RescheduleException();
