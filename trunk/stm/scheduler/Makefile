@@ -11,7 +11,7 @@ LIBSCHEDULER = ../obj/libscheduler.a
 all:  $(SCHEDULER_OBJS) $(LIBSCHEDULER)
 scheduler: $(SCHEDULER_OBJS) $(LIBSCHEDULER)
 
-BiModalScheduler.o: BiModalScheduler.cpp BiModalScheduler.h scheduler_common.h RunnerThread.o ThreadLock.o Queue.o ThreadData.o
+BiModalScheduler.o: BiModalScheduler.cpp BiModalScheduler.h scheduler_common.h RunnerThread.o ThreadLock.o Queue.o ThreadData.o SchedulerStatistics.h
 	$(CXX) $(CXXFLAGS) $(INCLUDEPATH) -c $< -o $@
 
 RunnerThread.o: RunnerThread.cpp RunnerThread.h scheduler_common.h Queue.o ThreadData.o

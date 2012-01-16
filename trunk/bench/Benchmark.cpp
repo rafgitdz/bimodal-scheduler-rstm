@@ -178,10 +178,7 @@ static void* work_thread(void* arg)
     // a sanity check
     if (args->id != 0)
         stm::shutdown();
-	
-	#ifdef USE_BIMODAL
-		stm::scheduler::BiModalScheduler::shutdown();
-	#endif
+
     
     return 0;
 }
@@ -278,6 +275,10 @@ void Benchmark::measure_speed()
             cout << " |" << endl;
         }
     }
+    
+	#ifdef USE_BIMODAL
+		stm::scheduler::BiModalScheduler::shutdown();
+	#endif
 }
 
 // make sure all the parameters make sense

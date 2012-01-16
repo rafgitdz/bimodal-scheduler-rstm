@@ -60,6 +60,7 @@ namespace stm {
 				
 				bool ShouldAbort(ContentionManager *enemy) 
 				{
+					stm::scheduler::BiModalScheduler::instance()->increaseConflictCounter();
 					BiModalCM* b = dynamic_cast<BiModalCM*>(enemy);
 
 					/*
@@ -82,6 +83,8 @@ namespace stm {
 					
 					m_reschedule = true;
 					b->m_reschedule = true;
+					if (IS_READING(getEpoch()))
+						stm::scheduler::BiModalScheduler::instance()->increaseFalsePositiveCounter();
 					/*
 					 * If two writing transactions have a conflict, the transaction
 					 * with the bigger (i.e. younger) timestamp is aborted

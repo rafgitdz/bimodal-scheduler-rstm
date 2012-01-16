@@ -10,6 +10,7 @@
 #include "RunnerThread.h"
 #include "ThreadLock.h"
 #include "Queue.h"
+#include "SchedulerStatistics.h"
 
 namespace stm {
 	namespace scheduler {
@@ -17,6 +18,7 @@ namespace stm {
 	class BiModalScheduler {
 		// Members and methods to keep this class a singleton
 		private:
+			
 			static ThreadLock* m_threadLock;
 			static BiModalScheduler* m_Instance;
 			BiModalScheduler();
@@ -28,6 +30,8 @@ namespace stm {
 			
 			// Members and methods related to the scheduling
 		private:
+			static SchedulerStatistics *stats;
+		
 			friend class RunnerThread;
 			// Holds the number of cores in the system
 			static long m_lngCoresNum;
@@ -78,6 +82,13 @@ namespace stm {
 			long getCurrentEpoch(int iCore);
 			
 			bool allQueuesEmpty();
+			
+			
+			/*
+			 * Statistics related methods
+			 */
+			void increaseConflictCounter() { stats->numConflicts++; }
+			void increaseFalsePositiveCounter() { stats->numFalsePositive++;}
 	};
 		
 	}
