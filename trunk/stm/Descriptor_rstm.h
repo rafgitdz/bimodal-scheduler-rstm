@@ -1071,6 +1071,9 @@ namespace stm
                         (reader->tx_state == ACTIVE))
                     {
                         bool_cas(&(reader->tx_state), ACTIVE, ABORTED);
+#ifdef USE_BIMODAL
+							reader->reschedule_core_num = iCore;
+#endif	
                     }
                 }
 
@@ -1500,6 +1503,10 @@ namespace stm
                         {
                             continue;
                         }
+                        
+#ifdef USE_BIMODAL
+							owner->reschedule_core_num = iCore;
+#endif	
 
                         // now ensure that we fallthrough to the cleanOnAbort
                         // code

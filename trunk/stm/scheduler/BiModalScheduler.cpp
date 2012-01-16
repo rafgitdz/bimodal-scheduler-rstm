@@ -176,3 +176,19 @@ bool BiModalScheduler::allQueuesEmpty() {
 		}
 	return empty;
 }
+
+
+void BiModalScheduler::increaseConflictCounter() { 
+		m_threadLock->Lock();
+
+	stats->numConflicts++; 
+		m_threadLock->Unlock();
+
+}
+void BiModalScheduler::increaseFalsePositiveCounter() { 
+		m_threadLock->Lock();
+
+	stats->numFalsePositive++;
+		m_threadLock->Unlock();
+
+}
