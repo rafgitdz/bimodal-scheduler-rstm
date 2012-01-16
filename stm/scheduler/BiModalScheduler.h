@@ -55,7 +55,7 @@ namespace stm {
 			 * Upon return, the thread affinity is set, and the thread
 			 * is allowed to run.
 			 */
-			void *schedule(void *(*pFunc)(void*), void *pArgs, void *pJobInfo);
+			void *schedule(void *(*pFunc)(void*), void *pArgs);
 
 			/* 
 			 * Reschedules the job that currently runs on the iFromCore to the iToCore.
@@ -68,7 +68,10 @@ namespace stm {
 			void moveJobToROQueue(InnerJob *job);
 			
 			void moveJobToROQueue(int iFromCore) { m_arThreads[iFromCore]->moveJobToROQueue();}
-			
+			bool isTxRO(int iCore) { return m_arThreads[iCore]->isTxRO(); }
+			inline void setTxRO(int iCore, bool value) { m_arThreads[iCore]->setTxRO(value); }
+			inline time_t getTxTimestamp(int iCore) {return m_arThreads[iCore]->getTxTimestamp();}
+			inline void setTxTimestamp(int iCore, time_t stamp) {return m_arThreads[iCore]->setTxTimestamp(stamp);}
 
 			InnerJob* roQueueDeque();
 			

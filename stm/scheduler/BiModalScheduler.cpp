@@ -48,10 +48,10 @@ void BiModalScheduler::init()
 		if (!m_Instance)
 		{
 			m_Instance = new BiModalScheduler();
+			cout << "Scheduler initialized" << endl;
 		}
 		m_threadLock->Unlock();
 	}
-	cout << "Scheduler initialized" << endl;
 }
 
 stm::scheduler::BiModalScheduler* BiModalScheduler::instance()
@@ -68,6 +68,7 @@ stm::scheduler::BiModalScheduler* BiModalScheduler::instance()
 void BiModalScheduler::shutdown()
 {
 	BiModalScheduler* scheduler = instance();
+	cout << "final epoch: " << *(scheduler->m_epoch) << endl;
 	/* Go over all runner threads, and shut down each thread */
 	for (int iThread = 0; iThread < m_lngCoresNum; iThread++)
 	{
@@ -87,7 +88,7 @@ long stm::scheduler::BiModalScheduler::getCoresNum()
  * When a new transation enters the system, we schedule it on the 
  * core which has less transactions in his queue
  */
-void *stm::scheduler::BiModalScheduler::schedule(void *(*pFunc)(void*), void *pArgs, void *pJobInfo)
+void *stm::scheduler::BiModalScheduler::schedule(void *(*pFunc)(void*), void *pArgs)
 {
 	void* result = NULL;
 	int iCore = 0;
@@ -104,7 +105,7 @@ void *stm::scheduler::BiModalScheduler::schedule(void *(*pFunc)(void*), void *pA
 				found = true;
 		}
 	}
-	result = m_arThreads[iCore]->addJob(pFunc, pArgs, pJobInfo, threadDataManager.getThreadData());
+	result = m_arThreads[iCore]->addJob(pFunc, pArgs, threadDataManager.getThreadData());
 	//cout << "Job scheduled in core " << iCore << endl;
 
 	return result;

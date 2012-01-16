@@ -14,7 +14,7 @@ using namespace std;
 using namespace stm::scheduler;
 
 RunnerThread::RunnerThread(const int iCpuID) 
-	: m_iCoreID(iCpuID), m_currJobInfo(NULL), m_blnShouldShutdown(false)
+	: m_iCoreID(iCpuID), m_blnShouldShutdown(false)
 {
 	// Initialize the thread queue
 	m_queue = new Queue();
@@ -133,7 +133,6 @@ void RunnerThread::doJobs()
 						m_currJob = m_queue->front();
 						m_currJob->setEpoch(epoch);
 			
-						m_currJobInfo = m_currJob->getJobInfo();
 						m_queue->pop(); // Remove the job from the queue
 						pthread_mutex_unlock(&m_queueLock);
 					}
@@ -151,13 +150,12 @@ void RunnerThread::doJobs()
 		{
 		}
 		m_currJob = NULL;
-		m_currJobInfo = NULL;
 	}
 }
 
-void *RunnerThread::addJob(void *(*pFunc)(void*), void *pArgs, void *pJobInfo, ThreadData* pThreadData)
+void *RunnerThread::addJob(void *(*pFunc)(void*), void *pArgs, ThreadData* pThreadData)
 {
-	InnerJob* newJob = new InnerJob(pFunc, pArgs, pJobInfo, pThreadData);
+	InnerJob* newJob = new InnerJob(pFunc, pArgs, pThreadData);
 
 	// Add the job to the queue
 	pthread_mutex_lock(&m_queueLock);
@@ -168,11 +166,6 @@ void *RunnerThread::addJob(void *(*pFunc)(void*), void *pArgs, void *pJobInfo, T
 	void* result = newJob->waitForFinish();
 	delete newJob;
 	return result;
-}
-
-void *RunnerThread::getJobInfo()
-{
-	return m_currJobInfo;
 }
 
 void RunnerThread::moveJob(InnerJob *jobMoved)
