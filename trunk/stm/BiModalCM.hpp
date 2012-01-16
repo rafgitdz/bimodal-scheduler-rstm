@@ -26,17 +26,15 @@ namespace stm {
 				// true if we have to reschedule in another queue, false otherwise
 				bool m_reschedule;
 				
+				bool m_newTx;
+				
 			public:
 				
-				BiModalCM() : m_isRO(true), m_reschedule(false) {
-					std::cout << "creating transaction\n";
-					struct timeval t;
-
-					gettimeofday(&t, NULL);
-					m_timestamp = t.tv_sec;
-					};
+				BiModalCM() : m_timestamp(NULL), m_isRO(true), 
+							  m_iCore(sched_getcpu()), m_epoch(-1), 
+							  m_reschedule(false), m_newTx(true) {}
 				
-				~BiModalCM(){};
+				~BiModalCM(){}
 				
 				time_t getTimestamp() { return m_timestamp; }
 				bool isReadOnly() { return m_isRO; }
@@ -47,13 +45,14 @@ namespace stm {
 				 */
 				virtual void OnBeginTransaction() 
 				{
-					//std::cout << "Beginning transaction\n";
-					m_isRO = true;
-					struct timeval t;
-
-					gettimeofday(&t, NULL);
-					m_timestamp = t.tv_sec;
-					m_iCore = sched_getcpu();
+					if (m_newTx) {
+						m_newTx = false;
+						m_isRO = true;
+						
+						struct timeval t;
+						gettimeofday(&t, NULL);
+						m_timestamp = t.tv_sec;
+					}
 					m_epoch = stm::scheduler::BiModalScheduler::instance()->getCurrentEpoch(m_iCore);
 					//std::cout << "epoch: " << m_epoch << "\n";
 				}
@@ -123,6 +122,10 @@ namespace stm {
 				{
 					if (m_isRO)
 						m_isRO = false;
+				}
+				
+				virtual void OnCommit() {
+					m_newTx = true;
 				}
 				
 		};
