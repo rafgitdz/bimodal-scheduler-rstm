@@ -87,8 +87,8 @@ namespace stm {
 			/*
 			 * Statistics related methods
 			 */
-			void increaseConflictCounter() { stats->numConflicts++; }
-			void increaseFalsePositiveCounter() { stats->numFalsePositive++;}
+			void increaseConflictCounter();
+			void increaseFalsePositiveCounter();
 	};
 		
 	}

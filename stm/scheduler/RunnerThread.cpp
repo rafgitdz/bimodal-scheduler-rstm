@@ -18,6 +18,7 @@ RunnerThread::RunnerThread(const int iCpuID)
 {
 	// Initialize the thread queue
 	m_queue = new Queue();
+	m_currJob = NULL;
 
 	// Initialize the lock and condition var
 	pthread_mutex_init(&m_queueLock, NULL);
@@ -53,6 +54,7 @@ void *threadFunc(void *pArgs)
 
 	pthread_cleanup_push(thread_cleanup, pArgs);
 
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 	RunnerThread* pNewThread = (RunnerThread*)pArgs;
 
 	pNewThread->threadStart();
