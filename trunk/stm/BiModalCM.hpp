@@ -14,30 +14,27 @@ namespace stm {
 		class BiModalCM : public ContentionManager
 		{
 			private:
-				// timestamp to resolve conflicts between two writing transactions
-				time_t m_timestamp;
-				// true if the transaction only reads shared objects, false otherwise
-				bool m_isRO;
 				// the id of the core where the transaction is excecuted
 				int m_iCore;
-				// the number of the epoch when the transaction started
-				long m_epoch;
 				
 				// true if we have to reschedule in another queue, false otherwise
 				bool m_reschedule;
 				
 				bool m_newTx;
 				
+				time_t getTimestamp() { return stm::scheduler::BiModalScheduler::instance()->getTxTimestamp(m_iCore); }
+				void setTimestamp(time_t stamp) { stm::scheduler::BiModalScheduler::instance()->setTxTimestamp(m_iCore, stamp); }
+				bool isReadOnly() { return stm::scheduler::BiModalScheduler::instance()->isTxRO(m_iCore); }
+				void setReadOnly(bool value) { stm::scheduler::BiModalScheduler::instance()->setTxRO(m_iCore, value); }
+				long getEpoch() {return stm::scheduler::BiModalScheduler::instance()->getCurrentEpoch(m_iCore);}
+				
 			public:
 				
-				BiModalCM() : m_timestamp(NULL), m_isRO(true), 
-							  m_iCore(sched_getcpu()), m_epoch(-1), 
+				BiModalCM() : m_iCore(sched_getcpu()), 
 							  m_reschedule(false), m_newTx(true) {}
 				
 				~BiModalCM(){}
 				
-				time_t getTimestamp() { return m_timestamp; }
-				bool isReadOnly() { return m_isRO; }
 				
 				
 				/*
@@ -47,14 +44,18 @@ namespace stm {
 				{
 					if (m_newTx) {
 						m_newTx = false;
-						m_isRO = true;
-						
-						struct timeval t;
-						gettimeofday(&t, NULL);
-						m_timestamp = t.tv_sec;
+						/*
+						 * If this is the first time this transaction begins, we 
+						 * initialize its timestamp, and set the transaction as read only
+						 */
+						if (getTimestamp()==NULL) {
+							setReadOnly(true);
+							
+							struct timeval t;
+							gettimeofday(&t, NULL);
+							setTimestamp(t.tv_sec);
+						}
 					}
-					m_epoch = stm::scheduler::BiModalScheduler::instance()->getCurrentEpoch(m_iCore);
-					//std::cout << "epoch: " << m_epoch << "\n";
 				}
 				
 				bool ShouldAbort(ContentionManager *enemy) 
@@ -65,12 +66,12 @@ namespace stm {
 					 * If two transactions with different epoch ids have a conflict
 					 * the transaction with the bigger epoch number is aborted
 					 */
-					if (m_epoch != b->m_epoch) {
+					if (getEpoch() != b->getEpoch()) {
 						/*
 						 * in this case, the aborted transaction should restart on the same core
 						 * where it executed before
 						 */
-						if (m_epoch < b->m_epoch) {
+						if (getEpoch() < b->getEpoch()) {
 							m_reschedule = false;
 							return true;
 						} else {
@@ -85,20 +86,20 @@ namespace stm {
 					 * If two writing transactions have a conflict, the transaction
 					 * with the bigger (i.e. younger) timestamp is aborted
 					 */
-					if (!m_isRO && !b->isReadOnly())
-						return (b->getTimestamp() < m_timestamp);
+					if (!isReadOnly() && !b->isReadOnly())
+						return (b->getTimestamp() < getTimestamp());
 						
 					/*
 					 * If we are in a Reading epoch, the writing transaction is aborted
 					 */
-					if (IS_READING(m_epoch))
-						return !m_isRO;
+					if (IS_READING(getEpoch()))
+						return !isReadOnly();
 						
 						
 					/*
 					 * If we are in a Writing epoch, the read-only transaction is aborted
 					 */
-					 return m_isRO;
+					 return isReadOnly();
 						
 					
 				}
@@ -110,8 +111,8 @@ namespace stm {
 				 */
 				virtual void onConflictWith(int iCore) {
 
-					if (m_reschedule && iCore !=-1) {
-						if (m_isRO)
+					if (m_reschedule) {
+						if (isReadOnly())
 							stm::scheduler::BiModalScheduler::instance()->moveJobToROQueue(m_iCore);
 						else
 							stm::scheduler::BiModalScheduler::instance()->reschedule(m_iCore,iCore);
@@ -120,11 +121,11 @@ namespace stm {
 				
 				virtual void OnOpenWrite()
 				{
-					if (m_isRO)
-						m_isRO = false;
+					if (isReadOnly())
+						setReadOnly(false);
 				}
 				
-				virtual void OnCommit() {
+				virtual void OnTransactionCommitted() {
 					m_newTx = true;
 				}
 				

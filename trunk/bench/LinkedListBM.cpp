@@ -97,7 +97,7 @@ bool LinkedListBM::isSane(void) const {
 	
 	 HelpingStruct* st = new HelpingStruct();
      st->objectConst = this;
-     bool* pblnResult = (bool *)sched->schedule(&isSaneCallback, st, NULL);
+     bool* pblnResult = (bool *)sched->schedule(&isSaneCallback, st);
      bool blnResult = *pblnResult;
      delete pblnResult;
      return blnResult;
@@ -149,7 +149,7 @@ bool LinkedListBM::extendedSanityCheck(verifier v, unsigned long v_param) const 
         st->objectConst = this;
         st->v = v;
         st->v_param = v_param;
-        bool* pblnResult = (bool *)sched->schedule(&extendedSanityCheckCallback, st, NULL);
+        bool* pblnResult = (bool *)sched->schedule(&extendedSanityCheckCallback, st);
         bool blnResult = *pblnResult;
 		delete pblnResult;
 		return blnResult;
@@ -199,7 +199,7 @@ void LinkedListBM::insert(int val)
         HelpingStruct* st = new HelpingStruct();
         st->object = this;
         st->val = val;
-        sched->schedule(&insertCallback, st, NULL);
+        sched->schedule(&insertCallback, st);
 }
 
 // search function
@@ -243,7 +243,7 @@ bool LinkedListBM::lookup(int val) const
 
         HelpingStruct* st = new HelpingStruct();
         st->objectConst = this;
-        bool* pblnResult = (bool *)sched->schedule(&lookupCallback, st, NULL);
+        bool* pblnResult = (bool *)sched->schedule(&lookupCallback, st);
         bool blnResult = *pblnResult;
         delete pblnResult;
         return blnResult;
@@ -298,7 +298,7 @@ void LinkedListBM::remove(int val)
         HelpingStruct* st = new HelpingStruct();
         st->object = this;
         st->val = val;
-        sched->schedule(&removeCallback, st, NULL);
+        sched->schedule(&removeCallback, st);
 }
 
 
@@ -339,6 +339,6 @@ void LinkedListBM::print() const {
 	
         HelpingStruct* st = new HelpingStruct();
         st->objectConst = this;
-        sched->schedule(&printCallback, st, NULL);
+        sched->schedule(&printCallback, st);
 	
 }

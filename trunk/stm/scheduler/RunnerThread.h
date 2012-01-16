@@ -31,9 +31,6 @@ namespace stm
 			// queue lock
 			pthread_mutex_t m_queueLock;
 
-			// The job that runs in the thread info, lets to compare against other jobs
-			void *m_currJobInfo;
-
 			InnerJob *m_currJob;
 
 			bool m_blnShouldShutdown;
@@ -63,9 +60,7 @@ namespace stm
 			void threadStart();
 
 			// Adds an external job (transaction) that the thread needs to perform
-			void *addJob(void *(*pFunc)(void*), void *pArgs, void *pJobInfo, ThreadData* pThreadData);
-
-			void *getJobInfo();
+			void *addJob(void *(*pFunc)(void*), void *pArgs, ThreadData* pThreadData);
 
 			// Moves the job that currently runs to the given core
 			void moveJob(RunnerThread *otherThread);
@@ -76,7 +71,12 @@ namespace stm
 			// Shutdown transactions running on this thread
 			void shutdown();
 			
-			long getCurrentEpoch() { return m_currJob->getEpoch(); }
+			inline long getCurrentEpoch() { return m_currJob->getEpoch(); }
+			inline bool isTxRO() { return m_currJob->isTxRO();}
+			inline void setTxRO(bool value) { m_currJob->setTxRO(value); }
+			inline time_t getTxTimestamp() {return m_currJob->getTxTimestamp();}
+			inline void setTxTimestamp(time_t stamp) {return m_currJob->setTxTimestamp(stamp);}
+			
 			
 			const int& getJobsNum() { return m_queue->size(); }
 

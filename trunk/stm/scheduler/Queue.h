@@ -22,10 +22,15 @@ namespace stm
 			static int m_iAllJobsIDs;
 			void *(*m_pFunc)(void*);
 			void *m_pArgs;
-			void *m_pJobInfo;
 			bool m_blnFinished;
 			void *m_result;
+			
+			/*
+			 * BiModal related fields
+			 */
 			long m_epoch;
+			time_t m_timestamp;
+			bool m_isRO;
 
 			// condition variable 
 			pthread_mutex_t* m_jobLock;
@@ -34,8 +39,8 @@ namespace stm
 			int m_iJobID;
 
 		public:
-			InnerJob(void *(*pFunc)(void*), void *pArgs, void *pJobInfo, ThreadData* pThreadData) 
-				: m_pFunc(pFunc), m_pArgs(pArgs), m_pJobInfo(pJobInfo), m_blnFinished(false), m_result(0), m_epoch(-1),
+			InnerJob(void *(*pFunc)(void*), void *pArgs, ThreadData* pThreadData) 
+				: m_pFunc(pFunc), m_pArgs(pArgs), m_blnFinished(false), m_result(0), m_epoch(-1), m_timestamp(NULL),
 					m_jobLock(pThreadData->getLock()), m_condJobFinished(pThreadData->getCondVar()), m_iJobID(++m_iAllJobsIDs)
 			{
 			}
@@ -64,11 +69,6 @@ namespace stm
 			{
 				return m_iJobID;
 			}
-
-			void *getJobInfo()
-			{
-				return m_pJobInfo;
-			}
 			
 			void setEpoch(long epoch)
 			{
@@ -79,6 +79,13 @@ namespace stm
 			{
 				return m_epoch;
 			}
+			
+			void setTxRO(bool value) {m_isRO = value;}
+			bool isTxRO() { return m_isRO;}
+			void setTxTimestamp(time_t stamp) {m_timestamp = stamp;}
+			time_t getTxTimestamp() {return m_timestamp;}
+			
+			
 		};
 
 		class Queue
