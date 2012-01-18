@@ -116,6 +116,13 @@ static void* fast_forward(void* arg)
 
 static void* work_thread(void* arg)
 {
+	
+
+#ifdef USE_BIMODAL
+	stm::scheduler::BiModalScheduler::init();
+#endif
+
+
     thread_args_t* args  = (thread_args_t*)arg;
     int            id    = args->id;
     unsigned int   seed  = id;
@@ -135,13 +142,7 @@ static void* work_thread(void* arg)
 
     if (id != 0)
         stm::init(BMCONFIG.cm_type, BMCONFIG.stm_validation,
-                  BMCONFIG.use_static_cm);
-
-#ifdef USE_BIMODAL
-	stm::scheduler::BiModalScheduler::init();
-#endif
-
-    Benchmark* b = args->b;
+                  BMCONFIG.use_static_cm);    Benchmark* b = args->b;
     i = 0;
 
 

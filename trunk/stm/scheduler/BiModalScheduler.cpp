@@ -42,7 +42,6 @@ void BiModalScheduler::init()
 	// Set the thread's data
 	ThreadData *pThreadData = new ThreadData();
 	threadDataManager.setThreadData(pThreadData);
-
 	if (!m_Instance)
 	{
 		m_threadLock->Lock();
@@ -50,21 +49,21 @@ void BiModalScheduler::init()
 		{
 			m_Instance = new BiModalScheduler();
 			stats = new SchedulerStatistics();
-			cout << "Scheduler initialized" << endl;
+			cout << "Scheduler initialized end" << endl;
 		}
 		m_threadLock->Unlock();
 	}
 }
 
 stm::scheduler::BiModalScheduler* BiModalScheduler::instance()
-{
-	if (!m_Instance)
+{/*
+  if (!m_Instance)
 	{
 		cout << "Fault in StmScheduler. Exiting!" << endl;
 		// Throw an exception
 		exit(1);
-	}
-	return m_Instance;
+		}
+	*/return m_Instance;
 }
 
 void BiModalScheduler::shutdown()
@@ -144,7 +143,7 @@ void BiModalScheduler::reschedule(int iFromCore, int iToCore)
 }
 
 long BiModalScheduler::getCurrentEpoch(int iCoreNum) {
-	return m_arThreads[iCoreNum]->getCurrentEpoch();
+	return *m_epoch;
 }
 
 void BiModalScheduler::moveJobToROQueue(InnerJob *job) {
