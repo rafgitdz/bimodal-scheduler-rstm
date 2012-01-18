@@ -72,7 +72,7 @@ void RunnerThread::threadStart()
 
 	// Introduce the thread to the stm
 	stm::init("Bimodal", "vis-eager", false);
-
+cout << "init de BM fini" << endl;
 	doJobs();
 }
 
@@ -89,7 +89,9 @@ void RunnerThread::setAffinity(int iCpuID)
 }
 
 void RunnerThread::doJobs()
-{
+{			
+	while (!(BiModalScheduler::instance()->m_Instance)){};
+
 	while (1)
 	{
 		// Waiting for a job
@@ -104,7 +106,7 @@ void RunnerThread::doJobs()
 					if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->m_roQueueCount,count, count - 1)) {
 						m_currJob = BiModalScheduler::instance()->roQueueDeque();
 						m_currJob->setEpoch(epoch);
-					} else continue;
+						} else continue;
 				}
 				else
 					if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->m_roQueueCount,1,0)) {
@@ -119,13 +121,12 @@ void RunnerThread::doJobs()
 				 */
 				if (BiModalScheduler::instance()->m_roQueue->size() >= BiModalScheduler::instance()->getCoresNum()
 					|| BiModalScheduler::instance()->allQueuesEmpty()) {
-						
-					if (BiModalScheduler::instance()->m_roQueue->size() != 0)
-						if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->m_epoch, epoch, epoch +1))
-						// we set the number of transactions to take from the ro queue
+					if (BiModalScheduler::instance()->m_roQueue->size() != 0 && *BiModalScheduler::instance()->m_roQueueCount != 2)
+						if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->m_epoch, epoch, epoch +1)){
+							// we set the number of transactions to take from the ro queue
 							*BiModalScheduler::instance()->m_roQueueCount = 
 								min(BiModalScheduler::instance()->getCoresNum(), (long)BiModalScheduler::instance()->m_roQueue->size());
-							
+						}	
 							
 					continue;
 				} else {
@@ -153,6 +154,7 @@ void RunnerThread::doJobs()
 		}
 		m_currJob = NULL;
 	}
+  
 }
 
 void *RunnerThread::addJob(void *(*pFunc)(void*), void *pArgs, ThreadData* pThreadData)
