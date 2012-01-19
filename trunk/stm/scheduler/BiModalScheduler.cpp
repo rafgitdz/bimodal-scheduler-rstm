@@ -143,7 +143,7 @@ void BiModalScheduler::reschedule(int iFromCore, int iToCore)
 }
 
 long BiModalScheduler::getCurrentEpoch(int iCoreNum) {
-	return *m_epoch;
+	return m_arThreads[iCoreNum]->getCurrentEpoch();
 }
 
 void BiModalScheduler::moveJobToROQueue(InnerJob *job) {
@@ -152,6 +152,8 @@ void BiModalScheduler::moveJobToROQueue(InnerJob *job) {
 	m_roQueue->push(job);
 	//cout << "Putting job in RO" <<endl;
 	//cout << "RO size :" << m_roQueue->size() << endl;
+	
+	stats->numPushToRO++;
     m_threadLock->Unlock();
 	
 	throw RescheduleException();
@@ -177,10 +179,14 @@ bool BiModalScheduler::allQueuesEmpty() {
 }
 
 
+/*
+ * Statistics realted
+ */
+
 void BiModalScheduler::increaseConflictCounter() { 
 		m_threadLock->Lock();
 
-	stats->numConflicts++; 
+		stats->numConflicts++; 
 		m_threadLock->Unlock();
 
 }
@@ -190,4 +196,11 @@ void BiModalScheduler::increaseFalsePositiveCounter() {
 	stats->numFalsePositive++;
 		m_threadLock->Unlock();
 
+}
+
+void BiModalScheduler::increaseAllQueueEmptyCounter() {
+	m_threadLock->Lock();
+
+	stats->numAllQueueEmpty++;
+    m_threadLock->Unlock();
 }

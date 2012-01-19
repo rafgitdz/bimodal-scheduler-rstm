@@ -9,6 +9,7 @@
 #include <string>
 #include <pthread.h>
 #include "Queue.h"
+#include <iostream>
 
 namespace stm
 {
@@ -71,7 +72,7 @@ namespace stm
 			// Shutdown transactions running on this thread
 			void shutdown();
 			
-			inline long getCurrentEpoch() { return m_currJob->getEpoch(); }
+			inline long getCurrentEpoch() {return m_currJob->getEpoch(); }
 			inline bool isTxRO() { return m_currJob->isTxRO();}
 			inline void setTxRO(bool value) { m_currJob->setTxRO(value); }
 			inline time_t getTxTimestamp() {return m_currJob->getTxTimestamp();}

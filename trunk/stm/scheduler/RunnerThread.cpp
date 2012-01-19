@@ -72,7 +72,6 @@ void RunnerThread::threadStart()
 
 	// Introduce the thread to the stm
 	stm::init("Bimodal", "vis-eager", false);
-cout << "init de BM fini" << endl;
 	doJobs();
 }
 
@@ -121,9 +120,12 @@ void RunnerThread::doJobs()
 				 */
 				if (BiModalScheduler::instance()->m_roQueue->size() >= BiModalScheduler::instance()->getCoresNum()
 					|| BiModalScheduler::instance()->allQueuesEmpty()) {
-					if (BiModalScheduler::instance()->m_roQueue->size() != 0 && *BiModalScheduler::instance()->m_roQueueCount != 2)
+					if (BiModalScheduler::instance()->m_roQueue->size() != 0)
 						if (bool_cas((volatile long unsigned int*)BiModalScheduler::instance()->m_epoch, epoch, epoch +1)){
 							// we set the number of transactions to take from the ro queue
+							if (BiModalScheduler::instance()->m_roQueue->size() < BiModalScheduler::instance()->getCoresNum()) {
+								BiModalScheduler::instance()->increaseAllQueueEmptyCounter();
+							}
 							*BiModalScheduler::instance()->m_roQueueCount = 
 								min(BiModalScheduler::instance()->getCoresNum(), (long)BiModalScheduler::instance()->m_roQueue->size());
 						}	
@@ -192,6 +194,7 @@ void RunnerThread::shutdown()
 }
 
 void RunnerThread::moveJobToROQueue() {
-	BiModalScheduler::instance()->moveJobToROQueue(m_currJob);
+	if (m_currJob)
+		BiModalScheduler::instance()->moveJobToROQueue(m_currJob);
 }
 

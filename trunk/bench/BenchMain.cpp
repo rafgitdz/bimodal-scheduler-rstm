@@ -125,7 +125,7 @@ int main(int argc, char** argv)
     int opt;
 
     // parse the command-line options
-    while ((opt = getopt(argc, argv, "B:C:H:a:d:m:p:hqv!xV:123T:W:X:")) != -1)
+    while ((opt = getopt(argc, argv, "B:C:H:a:d:m:p:hqv!xV:1234T:W:X:")) != -1)
     {
         switch(opt) {
           case 'B':
@@ -180,6 +180,10 @@ int main(int argc, char** argv)
           case '3':
             BMCONFIG.lThresh = 0;
             BMCONFIG.iThresh = 15;
+            break;
+          case '4':
+			BMCONFIG.lThresh = 15;
+            BMCONFIG.iThresh = 0;
             break;
         }
     }

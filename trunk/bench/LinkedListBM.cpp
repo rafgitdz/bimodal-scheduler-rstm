@@ -52,7 +52,7 @@ typedef struct
 
 // constructor just makes a sentinel for the data structure
 LinkedListBM::LinkedListBM() : sentinel(new LLNode())
-{ }
+{}
 
 // simple sanity check:  make sure all elements of the list are in sorted order
 bool LinkedListBM::isSane2(void) const

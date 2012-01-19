@@ -59,6 +59,7 @@
 #endif
 #ifdef USE_BIMODAL
 #include <sched.h>
+#include <iostream>
 #endif
 
 namespace stm
@@ -620,6 +621,7 @@ namespace stm
             if (tx_state == ABORTED) {
                 ConflictCounter[id].ADD_VALIDATION_FAIL();
                 abort();
+                
             }
         }
 
@@ -684,6 +686,7 @@ namespace stm
             while (pcount_cache != pcount) {
                 pcount_cache = pcount;
                 validate();
+                std::cout << "check_pcount";
                 verifySelf();
             }
 #endif
@@ -828,6 +831,7 @@ namespace stm
             for (unsigned long i = 0; i < invisibleReads.element_count; i++) {
                 if (!isCurrent(e[i].shared, e[i].read_version)) {
                     ConflictCounter[id].ADD_VALIDATION_FAIL();
+                    std::cout << "invisible reader\n";
                     abort();
                 }
             }
@@ -846,6 +850,7 @@ namespace stm
             for (unsigned long i = 0; i < invisibleReads.element_count; i++) {
                 if (!isCurrent(e[i].shared, e[i].read_version)) {
                     ConflictCounter[id].ADD_VALIDATION_FAIL();
+                    std::cout << "adding visible reader";
                     abort();
                 }
                 if (e[i].shared == shared)
@@ -864,6 +869,7 @@ namespace stm
             for (unsigned long i = 0; i < lazyWrites.element_count; i++) {
                 if (!isCurrent(e[i].shared, e[i].read_version)) {
                     ConflictCounter[id].ADD_VALIDATION_FAIL();
+                    std::cout << "verify lazy writes";
                     abort();
                 }
             }
@@ -880,8 +886,10 @@ namespace stm
             for (unsigned long i = 0; i < lazyWrites.element_count; i++) {
                 assert(e[i].isAcquired == false);
                 if (!(lazyAcquire(e[i].shared, e[i].read_version,
-                                  e[i].write_version)))
+                                  e[i].write_version))) {
+									  std::cout << "acquire lazy\n";
                     abort();
+				}
                 e[i].isAcquired = true;
             }
         }
@@ -1221,6 +1229,7 @@ namespace stm
                     // changed, at least one writer acquired /this/, and we may
                     // be incorrect
                     if (newer != header->m_payload) {
+						std::cout << "crap!\n";
                         abort();
                     }
 
