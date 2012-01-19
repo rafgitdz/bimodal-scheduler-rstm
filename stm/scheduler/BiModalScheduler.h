@@ -89,6 +89,7 @@ namespace stm {
 			 */
 			void increaseConflictCounter();
 			void increaseFalsePositiveCounter();
+			void increaseAllQueueEmptyCounter();
 	};
 		
 	}

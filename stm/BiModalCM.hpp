@@ -16,6 +16,7 @@ namespace stm {
 			private:
 				// the id of the core where the transaction is excecuted
 				int m_iCore;
+				int m_epoch;
 				
 				// true if we have to reschedule in another queue, false otherwise
 				bool m_reschedule;
@@ -26,7 +27,7 @@ namespace stm {
 				void setTimestamp(time_t stamp) { stm::scheduler::BiModalScheduler::instance()->setTxTimestamp(m_iCore, stamp); }
 				bool isReadOnly() { return stm::scheduler::BiModalScheduler::instance()->isTxRO(m_iCore); }
 				void setReadOnly(bool value) { stm::scheduler::BiModalScheduler::instance()->setTxRO(m_iCore, value); }
-				long getEpoch() {return stm::scheduler::BiModalScheduler::instance()->getCurrentEpoch(m_iCore);}
+				long getEpoch() {return m_epoch;}
 				
 			public:
 				
@@ -50,28 +51,31 @@ namespace stm {
 						 */
 						if (getTimestamp()==NULL) {
 							setReadOnly(true);
-							
 							struct timeval t;
 							gettimeofday(&t, NULL);
 							setTimestamp(t.tv_sec);
 						}
 					}
+					m_epoch = stm::scheduler::BiModalScheduler::instance()->getCurrentEpoch(m_iCore);
 				}
 				
 				bool ShouldAbort(ContentionManager *enemy) 
 				{
 					stm::scheduler::BiModalScheduler::instance()->increaseConflictCounter();
+					std::cout << "conflict\n";
 					BiModalCM* b = dynamic_cast<BiModalCM*>(enemy);
 
 					/*
 					 * If two transactions with different epoch ids have a conflict
 					 * the transaction with the bigger epoch number is aborted
 					 */
+					  
 					if (getEpoch() != b->getEpoch()) {
 						/*
 						 * in this case, the aborted transaction should restart on the same core
 						 * where it executed before
 						 */
+						
 						if (getEpoch() < b->getEpoch()) {
 							m_reschedule = false;
 							return true;
@@ -115,6 +119,7 @@ namespace stm {
 				virtual void onConflictWith(int iCore) {
 
 					if (m_reschedule) {
+						std::cout << "onConflictWith\n";
 						if (isReadOnly())
 							stm::scheduler::BiModalScheduler::instance()->moveJobToROQueue(m_iCore);
 						else

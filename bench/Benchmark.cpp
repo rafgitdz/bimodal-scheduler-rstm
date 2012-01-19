@@ -140,9 +140,10 @@ static void* work_thread(void* arg)
         chance[i] = rand_r(&seed) % BMCONFIG.NUM_OUTCOMES;
     }
 
-    if (id != 0)
+   /* if (id != 0)
         stm::init(BMCONFIG.cm_type, BMCONFIG.stm_validation,
-                  BMCONFIG.use_static_cm);    Benchmark* b = args->b;
+                  BMCONFIG.use_static_cm); */
+    Benchmark* b = args->b;
     i = 0;
 
 
